@@ -21,20 +21,9 @@ body {
 
 canvas {
 	display: block;
+	max-width: 390px;
 	width: 100%;
 	height: 100dvh;
-}
-
-.frog-grid {
-	display: flex;
-	flex-wrap: wrap;
-	justify-content: space-between;
-	padding-inline: 24px;
-}
-
-canvas.frog {
-	width: 64px;
-	height: 64px;
 }
 
 #toolbar {
