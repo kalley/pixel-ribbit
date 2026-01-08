@@ -17,6 +17,9 @@ import {
 import { createFrogSpriteFactory } from "./renderer/draw-frog";
 import { render } from "./renderer/render";
 import "./style.css";
+import lightingUrl from "./assets/frog_lighting.png";
+import maskUrl from "./assets/frog_mask.png";
+import outlineUrl from "./assets/frog_outline.png";
 import { listenForClicks, makeCanvas } from "./ui/canvas";
 import { imageUpload } from "./ui/image-upload";
 import { activeTongues } from "./ui/tongues";
@@ -27,7 +30,7 @@ const app = document.querySelector<HTMLDivElement>("#app");
 if (!app) {
 	throw new Error("App element not found");
 }
-const imageUrls = ["/frog_mask.png", "/frog_lighting.png", "/frog_outline.png"];
+const imageUrls = [maskUrl, lightingUrl, outlineUrl];
 
 // Load all three, do something when done
 const factory = await Promise.all(

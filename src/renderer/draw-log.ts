@@ -1,8 +1,9 @@
+import logUrl from "../assets/log.png";
 import { LOG_HEIGHT, LOG_WIDTH, SLOT_PADDING } from "../constants";
 import { loadImage } from "../utils/load-image";
 import type { LayoutFrame } from "../viewport";
 
-const log = loadImage("/log.png");
+const log = loadImage(logUrl);
 
 export function drawLog(
 	ctx: CanvasRenderingContext2D,
