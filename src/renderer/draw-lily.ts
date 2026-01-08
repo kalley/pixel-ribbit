@@ -1,9 +1,11 @@
+import flowerUrl from "../assets/lily_flower.png";
+import leafUrl from "../assets/lily_leaf.png";
 import { CORE_CONTENT_SIZE, CORE_X, STREAM_WIDTH } from "../constants";
 import { loadImage } from "../utils/load-image";
 import type { LayoutFrame } from "../viewport";
 
-const flower = loadImage("/lily_flower.png");
-export const leaf = loadImage("/lily_leaf.png");
+const flower = loadImage(flowerUrl);
+export const leaf = loadImage(leafUrl);
 
 export function drawLily(
 	ctx: CanvasRenderingContext2D,
