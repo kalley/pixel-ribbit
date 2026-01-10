@@ -56,7 +56,7 @@ export function makeCanvas(
 		canvas.width = viewport.width * viewport.dpr;
 		canvas.height = viewport.height * viewport.dpr;
 		canvas.style.width = `${viewport.width}px`;
-		canvas.style.height = `${viewport.height}px`;
+		// canvas.style.height = `${viewport.height}px`;
 
 		const newLayout = updateLayout();
 
