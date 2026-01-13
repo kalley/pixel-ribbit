@@ -1,4 +1,4 @@
-import type { RGB } from "../domain/color";
+import type { RGB } from "../game/color";
 import type { PaletteChoices } from "./color-utils";
 
 export const ALPHA_THRESHOLD = 128; // Ignore pixels that are more than 50% transparent

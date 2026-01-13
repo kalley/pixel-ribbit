@@ -1,4 +1,4 @@
-import type { Grid } from "../domain/Grid";
+import type { Grid } from "../game/Grid";
 import type { RawGrid } from "../image-processing/imagedata-to-grid";
 
 export function compileGrid(raw: RawGrid): Grid {

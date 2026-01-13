@@ -1,15 +1,39 @@
-function buildFrogSprite({
-	maskImg,
-	lightingImg,
-	outlineImg,
+import lightingUrl from "../assets/frog_lighting.png";
+import maskUrl from "../assets/frog_mask.png";
+import outlineUrl from "../assets/frog_outline.png";
+import { FROG_SIZE } from "../constants";
+import type { EngineConstraints } from "../engine/constraints";
+import type { PathSegment } from "../engine/path";
+import type { RGB } from "../game/color";
+import type { Level } from "../game/level";
+import type { Frog } from "../game/types";
+import { loadImage } from "../utils/load-image";
+import type { LayoutFrame } from "../viewport";
+import type { GridLayout } from "./calculate-grid-layout";
+import { getEntityVisualPosition } from "./path-interpolation";
+import { getPoolEntityPosition } from "./pool-layout";
+import { getWaitingAreaPosition } from "./waiting-area-layout";
+
+export const HALF_FROG_SIZE = FROG_SIZE / 2;
+
+const maskImg = loadImage(maskUrl);
+const lightingImg = loadImage(lightingUrl);
+const outlineImg = loadImage(outlineUrl);
+
+export function buildFrogSprite({
+	mask: maskImg,
+	lighting: lightingImg,
+	outline: outlineImg,
 	color, // [r, g, b]
 	targetSize = 128,
+	screenMode = "multiply",
 }: {
-	maskImg: HTMLImageElement;
-	lightingImg: HTMLImageElement;
-	outlineImg: HTMLImageElement;
-	color: [number, number, number];
+	mask: HTMLImageElement;
+	lighting: HTMLImageElement;
+	outline: HTMLImageElement;
+	color: RGB;
 	targetSize?: number;
+	screenMode?: "screen" | "multiply";
 }): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	canvas.width = targetSize;
@@ -31,7 +55,7 @@ function buildFrogSprite({
 	ctx.fillRect(0, 0, targetSize, targetSize);
 
 	// 3. Apply lighting
-	ctx.globalCompositeOperation = "multiply";
+	ctx.globalCompositeOperation = screenMode;
 	ctx.drawImage(lightingImg, 0, 0, targetSize, targetSize);
 
 	// 4. Draw outline
@@ -41,31 +65,123 @@ function buildFrogSprite({
 	return canvas;
 }
 
-export function createFrogSpriteFactory({
-	maskImg,
-	lightingImg,
-	outlineImg,
-}: {
-	maskImg: HTMLImageElement;
-	lightingImg: HTMLImageElement;
-	outlineImg: HTMLImageElement;
-}) {
-	const cache = new Map<string, HTMLCanvasElement>();
+const cache = new Map<string, HTMLCanvasElement>();
 
-	return function getFrogSprite(color: [number, number, number]) {
-		const key = `${color[0]},${color[1]},${color[2]}`;
+function getFrogSprite(color: RGB) {
+	const key = `${color[0]},${color[1]},${color[2]}`;
 
-		let sprite = cache.get(key);
-		if (!sprite) {
-			sprite = buildFrogSprite({
-				maskImg,
-				lightingImg,
-				outlineImg,
-				color,
-			});
-			cache.set(key, sprite);
+	let sprite = cache.get(key);
+	if (!sprite) {
+		const mask = maskImg.get();
+		const lighting = lightingImg.get();
+		const outline = outlineImg.get();
+
+		if (!mask || !lighting || !outline) {
+			return null;
 		}
 
-		return sprite;
-	};
+		sprite = buildFrogSprite({
+			mask,
+			lighting,
+			outline,
+			color,
+		});
+		cache.set(key, sprite);
+	}
+
+	return sprite;
+}
+
+export function drawFrogOnPath(
+	ctx: CanvasRenderingContext2D,
+	frog: Frog,
+	level: Level,
+	pathSegments: PathSegment[],
+	constraints: EngineConstraints,
+	gridLayout: GridLayout,
+) {
+	const visualPos = getEntityVisualPosition(
+		frog.position.index,
+		frog.position.ticksAtPosition,
+		constraints.ticksPerSegment,
+		pathSegments,
+		gridLayout,
+	);
+	const color = level.palette[frog.resourceType];
+	const sprite = getFrogSprite(color.rgb);
+
+	if (sprite) {
+		ctx.save();
+		ctx.translate(visualPos.x, visualPos.y);
+		ctx.rotate(visualPos.rotation);
+		ctx.drawImage(
+			sprite,
+			-HALF_FROG_SIZE,
+			-HALF_FROG_SIZE,
+			FROG_SIZE,
+			FROG_SIZE,
+		);
+		ctx.restore();
+	}
+
+	return visualPos;
+}
+
+export function drawFrogInPool(
+	ctx: CanvasRenderingContext2D,
+	frog: Frog,
+	columnIndex: number,
+	rowIndex: number,
+	layout: LayoutFrame["feeder"],
+	level: Level,
+) {
+	const color = level.palette[frog.resourceType];
+	const sprite = getFrogSprite(color.rgb);
+	const pos = getPoolEntityPosition(columnIndex, rowIndex, layout);
+
+	ctx.save();
+	ctx.translate(pos.x, pos.y);
+
+	if (sprite) {
+		ctx.drawImage(
+			sprite,
+			-HALF_FROG_SIZE,
+			-HALF_FROG_SIZE,
+			FROG_SIZE,
+			FROG_SIZE,
+		);
+	}
+
+	ctx.restore();
+
+	return pos;
+}
+
+export function drawFrogInWaitingArea(
+	ctx: CanvasRenderingContext2D,
+	frog: Frog,
+	slotIndex: number,
+	layout: LayoutFrame["conveyorSlots"],
+	level: Level,
+) {
+	const color = level.palette[frog.resourceType];
+	const sprite = getFrogSprite(color.rgb);
+	const pos = getWaitingAreaPosition(slotIndex, layout);
+
+	ctx.save();
+	ctx.translate(pos.x, pos.y);
+
+	if (sprite) {
+		ctx.drawImage(
+			sprite,
+			-HALF_FROG_SIZE,
+			-HALF_FROG_SIZE,
+			FROG_SIZE,
+			FROG_SIZE,
+		);
+	}
+
+	ctx.restore();
+
+	return pos;
 }

@@ -4,7 +4,7 @@
 // DESIGN SPACE
 // ============================================
 export const DESIGN_WIDTH = 390;
-export const VERTIAL_SPACING = 40;
+const VERTIAL_SPACING = 40;
 
 export const FROG_SIZE = 56;
 
@@ -21,8 +21,8 @@ export const CORE_CONTENT_SIZE = DESIGN_WIDTH - CORE_PADDING * 2; // Stream/grid
 export const CORE_HEIGHT = VERTIAL_SPACING + CORE_CONTENT_SIZE;
 
 // Core content positioning (static)
-export const CORE_X = CORE_PADDING; // = 37.5
-export const CORE_Y = TOP_RAIL_HEIGHT; // = 37.5 (relative to core rail top)
+export const CORE_X = CORE_PADDING;
+const CORE_Y = TOP_RAIL_HEIGHT;
 
 // Stream specifics (for decoration)
 export const STREAM_WIDTH = 56;
@@ -30,7 +30,7 @@ export const STREAM_BORDER_RADIUS = 20;
 
 // Grid (static position, dynamic density)
 export const GRID_PADDING = 12;
-export const TARGET_GRID_SIZE =
+export const GRID_SIZE =
 	CORE_CONTENT_SIZE - STREAM_WIDTH * 2 - GRID_PADDING * 2;
 export const GRID_X = CORE_X + STREAM_WIDTH + GRID_PADDING;
 export const GRID_Y = CORE_Y + STREAM_WIDTH + GRID_PADDING;
@@ -59,5 +59,4 @@ export const FEEDER_PADDING = 24; // Top/bottom padding
 // ELASTIC/FOG
 // ============================================
 export const MIN_ELASTIC_HEIGHT = 40; // Minimum fog space
-export const FEEDER_FOG_OVERLAP = 30; // Fog overlaps feeder top
-export const FOG_OPACITY_MAX = 0.85; // Max fog opacity
+export const FEEDER_FOG_OVERLAP = 48; // Fog overlaps feeder top

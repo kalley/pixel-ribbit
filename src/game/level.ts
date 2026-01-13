@@ -1,4 +1,5 @@
 import type { WeightedOption } from "../engine/rng";
+import { clamp } from "../utils/clamp";
 import type { Palette } from "./color";
 import type { Grid } from "./Grid";
 import type { Pixel } from "./Pixel";
@@ -46,15 +47,12 @@ export type Level = {
 	width: number;
 	height: number;
 	pixels: Pixel[][];
+	pixelsPerSize: number;
 	palette: Palette;
 	rules: LevelRules;
 };
 
-function clamp(num: number, min: number, max: number) {
-	return Math.min(Math.max(num, min), max);
-}
-
-export function roundToStep(
+function roundToStep(
 	value: number,
 	step: number,
 	options?: {
@@ -79,6 +77,7 @@ export function roundToStep(
 
 export function createLevel(
 	grid: Grid,
+	pixelsPerSize: number,
 	palette: Palette,
 	rules?: LevelRulesOptions,
 ): Level {
@@ -86,17 +85,18 @@ export function createLevel(
 
 	return {
 		...grid,
+		pixelsPerSize,
 		palette,
 		rules: {
 			cannonGeneration: { shotWeights, ...rules?.cannonGeneration },
 			conveyorSlots: { slotCount: 5, ...rules?.conveyorSlots },
 			conveyor: {
 				capacity: 5,
-				ticksPerPixel: 2,
+				ticksPerPixel: 6,
 				...rules?.conveyor,
 			},
 			feeder: { columnCount: 3, maxVisibleRows: 3, ...rules?.feeder },
-			timing: { msPerTick: 100, ...rules?.timing },
+			timing: { msPerTick: 12, ...rules?.timing },
 		},
 	};
 }

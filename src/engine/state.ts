@@ -1,115 +1,78 @@
-import type { ColorId } from "../domain/color";
-import type { Level } from "../domain/level";
-import { SeededRNG } from "./rng";
-import type { Cannon, CannonId, FeederColumn, GameState } from "./types";
+// engine/state.ts
 
-export function createGameState(
-	{ pixels, rules, width, height }: Level,
-	seed: number,
-): GameState {
-	if (pixels.length === 0) {
-		throw new Error("Level must have at least one pixel");
-	}
-	const rng = new SeededRNG(seed);
+import type { EngineConstraints } from "./constraints";
+import { createValidator } from "./constraints";
+import { generateGridPath } from "./path";
+import type { Entity, EntityRegistry, GameState, Resource } from "./types";
 
-	// Count pixels by color
-	const pixelsByColor = new Map<ColorId, number>();
-	for (const row of pixels) {
-		for (const pixel of row) {
-			if (pixel.alive) {
-				const count = pixelsByColor.get(pixel.colorId) || 0;
-				pixelsByColor.set(pixel.colorId, count + 1);
-			}
-		}
-	}
+export interface GameStateConfig {
+	constraints: EngineConstraints;
+	entities: Entity[];
+	resources: Resource[][];
+	gridWidth: number;
+	gridHeight: number;
+	pathLength: number;
+	poolColumns: number;
+	maxVisiblePerColumn?: number;
+	seed?: number;
+}
 
-	if (pixelsByColor.size === 0) {
-		throw new Error("Grid must have at least one active pixel");
-	}
+export function createGameState(config: GameStateConfig): GameState {
+	const validator = createValidator(config.constraints);
 
-	// Generate cannons - total shots must equal total pixels
-	const cannons: Record<CannonId, Cannon> = {};
-	let nextId = 0;
-
-	const colorEntries = [...pixelsByColor.entries()].sort(([a], [b]) =>
-		a.localeCompare(b),
-	);
-
-	for (const [colorId, totalPixels] of colorEntries) {
-		let shotsRemaining = totalPixels;
-
-		// Create multiple cannons for this color
-		while (shotsRemaining > 0) {
-			const shots = Math.min(
-				shotsRemaining,
-				rng.weightedChoiceObj(rules.cannonGeneration.shotWeights), // Random shots per cannon
-			);
-			const id = `cannon_${nextId}`;
-
-			cannons[id] = {
-				id,
-				color: colorId,
-				shotsRemaining: shots,
-				location: { type: "feeder" },
-				groupId: null,
-			};
-
-			shotsRemaining -= shots;
-			nextId++;
-		}
+	// Create entity registry
+	const entityRegistry: EntityRegistry = {};
+	for (const entity of config.entities) {
+		entityRegistry[entity.id] = entity;
 	}
 
-	// Create feeder - shuffle cannons for random order
-	const allCannonIds = Object.keys(cannons);
-	let shuffled = rng.shuffle(allCannonIds);
-	const maxInitialShots = rules.cannonGeneration.maxInitialShots;
+	// Distribute entities into pool columns (round-robin)
+	const maxVisible = config.maxVisiblePerColumn ?? 3;
+	const columns = Array.from({ length: config.poolColumns }, () => ({
+		entities: [] as string[],
+		maxVisible,
+	}));
 
-	if (maxInitialShots) {
-		const large = shuffled.filter(
-			(id) => cannons[id].shotsRemaining > maxInitialShots,
-		);
-		const small = shuffled.filter(
-			(id) => cannons[id].shotsRemaining <= maxInitialShots,
-		);
-		shuffled = [...small, ...large]; // Small cannons first
-	}
-
-	const columnCount = rules.feeder.columnCount;
-	const columns: FeederColumn[] = [];
-
-	for (let i = 0; i < columnCount; i++) {
-		columns[i] = {
-			cannons: [],
-			maxVisible: rules.feeder.maxVisibleRows,
-		};
-	}
-
-	// Distribute cannons round-robin
-	shuffled.forEach((cannonId, index) => {
-		const columnIndex = index % columnCount;
-		columns[columnIndex].cannons.push(cannonId);
+	config.entities.forEach((entity, index) => {
+		const columnIndex = index % config.poolColumns;
+		columns[columnIndex].entities.push(entity.id);
 	});
 
-	const perimeter = 2 * (width + height) - 4;
-	const beltLength = perimeter * rules.conveyor.ticksPerPixel;
+	const pathSegments = generateGridPath(config.gridWidth, config.gridHeight);
 
 	return {
-		grid: { height, pixels, width },
-		cannons,
-		cannonGroups: {},
-		conveyor: {
-			cannonsOnBelt: [],
-			capacity: rules.conveyor.capacity,
-			beltLength,
+		constraints: config.constraints,
+		validator,
+
+		grid: {
+			width: config.gridWidth,
+			height: config.gridHeight,
+			resources: config.resources,
 		},
-		conveyorSlots: {
-			slots: Array(rules.conveyorSlots.slotCount).fill(null),
+
+		path: {
+			entities: [],
+			capacity: config.constraints.pathCapacity,
+			segments: pathSegments,
+			length: config.pathLength,
 		},
-		feeder: { columns },
+
+		waitingArea: {
+			entities: Array(config.constraints.waitingAreaCapacity).fill(null),
+			capacity: config.constraints.waitingAreaCapacity,
+		},
+
+		pool: {
+			columns,
+		},
+
+		entityRegistry,
+
 		tick: 0,
 		status: "playing",
+
 		_debug: {
-			seed,
+			seed: config.seed,
 			moveHistory: [],
 			eventLog: [],
 		},

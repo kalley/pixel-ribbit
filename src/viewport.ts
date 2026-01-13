@@ -22,7 +22,7 @@ export type ViewportState = {
 	safeArea: { top: number; bottom: number };
 };
 
-export const DEFAULT_VIEWPORT: ViewportState = {
+const DEFAULT_VIEWPORT: ViewportState = {
 	width: 390, // iPhone 14 Pro width
 	height: 844, // iPhone 14 Pro height
 	dpr: 2,
@@ -99,6 +99,7 @@ export type LayoutFrame = {
 
 	scale: number;
 	visibleHeight: number;
+	width: number;
 };
 
 function computeSlotPositions(slotCount: number): number[] {
@@ -132,7 +133,7 @@ function computeFeederHeight(visibleRows: number): number {
 
 function computeMaxFeederRows(availableHeight: number): number {
 	// How many rows can physically fit in available space?
-	const availableForRows = availableHeight - FEEDER_PADDING * 2;
+	const availableForRows = availableHeight - FEEDER_PADDING;
 	return Math.floor(
 		(availableForRows + FEEDER_ROW_SPACING) /
 			(FEEDER_CELL_SIZE + FEEDER_ROW_SPACING),
@@ -185,7 +186,7 @@ export function computeLayout(
 	const slotsY = coreY + coreHeight;
 	const feederY = slotsY + conveyorHeight;
 
-	const elasticY = feederY - FEEDER_FOG_OVERLAP;
+	const elasticY = feederY + feederHeight - FEEDER_FOG_OVERLAP;
 
 	const layout = {
 		topRail: {
@@ -211,12 +212,13 @@ export function computeLayout(
 			actualRows: Math.max(actualRows, levelRules.maxVisiblePerColumn),
 		},
 		elastic: {
-			y: elasticY,
-			height: elasticHeight,
-			fogEnd: feederY + FEEDER_FOG_OVERLAP,
+			y: elasticY - FEEDER_PADDING * 2 - FEEDER_FOG_OVERLAP,
+			height: elasticHeight + FEEDER_PADDING * 2 + FEEDER_FOG_OVERLAP,
+			fogEnd: elasticY + elasticHeight,
 		},
 		scale,
 		visibleHeight,
+		width: DESIGN_WIDTH,
 	};
 
 	return layout;
