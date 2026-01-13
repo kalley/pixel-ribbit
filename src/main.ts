@@ -32,11 +32,9 @@ if (!app) {
 
 let gameState: GameState | null = null;
 let renderContext: RenderContext | null = null;
-let currentLevel: Level | null = null;
 
 function initGame(level: Level, seed: number) {
 	gameState = createFrogGame(level, seed);
-	currentLevel = level;
 
 	// Create or reset render context
 	const gridLayout = calculateGridLayout(
@@ -124,7 +122,7 @@ function gameLoop(now: number) {
 	}
 
 	// Render
-	render(canvasCtx, gameState, renderContext, currentLevel, now);
+	render(canvasCtx, gameState, renderContext, now);
 
 	requestAnimationFrame(gameLoop);
 }

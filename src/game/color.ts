@@ -1,10 +1,12 @@
-import type { PaletteChoices } from "../image-processing/color-utils";
+import { type PaletteChoices, palette } from "../image-processing/color-utils";
 import { ALPHA_THRESHOLD } from "../image-processing/posterize";
 
 export type ColorId = string;
 
 export type RGB = [r: number, g: number, b: number];
 export type RGBA = [r: number, g: number, b: number, a: number];
+
+export const GLOBAL_PALLETE = Object.freeze(createPalette(palette));
 
 type ColorEntry = {
 	id: ColorId;

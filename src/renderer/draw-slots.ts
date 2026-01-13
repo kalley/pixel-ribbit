@@ -1,6 +1,5 @@
 import { FROG_SIZE, SLOT_PADDING, SLOT_SIZE } from "../constants";
 import type { GameState } from "../engine/types";
-import type { Level } from "../game/level";
 import { getFrogHunger } from "../game/types";
 import type { LayoutFrame } from "../viewport";
 import { drawFrogInWaitingArea } from "./draw-frog";
@@ -12,7 +11,6 @@ const STROKE_WIDTH = 2;
 export function drawSlots(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
-	level: Level,
 	layout: LayoutFrame["conveyorSlots"],
 	renderContext: RenderContext,
 ) {
@@ -40,7 +38,7 @@ export function drawSlots(
 		// Draw cannon if occupied
 		if (frogId) {
 			const frog = state.entityRegistry[frogId];
-			const { x, y } = drawFrogInWaitingArea(ctx, frog, index, layout, level);
+			const { x, y } = drawFrogInWaitingArea(ctx, frog, index, layout);
 			drawOutlinedText(ctx, getFrogHunger(frog).toString(), x, y + 4);
 
 			renderContext.clickables.set(frog.id, {

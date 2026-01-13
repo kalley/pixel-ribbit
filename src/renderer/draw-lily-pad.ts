@@ -6,7 +6,7 @@ import type { GameState } from "../engine/types";
 import type { Frog } from "../game/types";
 import { loadImage } from "../utils/load-image";
 import type { GridLayout } from "./calculate-grid-layout";
-import { HALF_FROG_SIZE } from "./draw-frog";
+import { FROG_CENTER } from "./draw-frog";
 import { getEntityVisualPosition } from "./path-interpolation";
 
 export const leaf = loadImage(leafUrl);
@@ -33,13 +33,7 @@ function drawLilyPad(
 	ctx.translate(visualPos.x, visualPos.y);
 	ctx.rotate(visualPos.rotation);
 
-	ctx.drawImage(
-		leafImage,
-		-HALF_FROG_SIZE,
-		-HALF_FROG_SIZE,
-		FROG_SIZE,
-		FROG_SIZE,
-	);
+	ctx.drawImage(leafImage, -FROG_CENTER, -FROG_CENTER, FROG_SIZE, FROG_SIZE);
 	ctx.restore();
 }
 

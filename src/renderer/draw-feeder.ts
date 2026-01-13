@@ -1,6 +1,5 @@
 import { FROG_SIZE } from "../constants";
 import type { GameState } from "../engine/types";
-import type { Level } from "../game/level";
 import { getFrogHunger } from "../game/types";
 import type { LayoutFrame } from "../viewport";
 import { drawFrogInPool } from "./draw-frog";
@@ -10,7 +9,6 @@ import type { RenderContext } from "./render-context";
 export function drawFeeder(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
-	level: Level,
 	layout: LayoutFrame["feeder"],
 	renderContext: RenderContext,
 ) {
@@ -23,14 +21,7 @@ export function drawFeeder(
 		visibleFrogs.forEach((frogId, slotIndex) => {
 			const frog = state.entityRegistry[frogId];
 
-			const { x, y } = drawFrogInPool(
-				ctx,
-				frog,
-				colIndex,
-				slotIndex,
-				layout,
-				level,
-			);
+			const { x, y } = drawFrogInPool(ctx, frog, colIndex, slotIndex, layout);
 
 			const isClickable = slotIndex === 0;
 			ctx.globalAlpha = isClickable ? 1.0 : 0.4;

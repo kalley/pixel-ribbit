@@ -4,8 +4,7 @@ import outlineUrl from "../assets/frog_outline.png";
 import { FROG_SIZE } from "../constants";
 import type { EngineConstraints } from "../engine/constraints";
 import type { PathSegment } from "../engine/path";
-import type { RGB } from "../game/color";
-import type { Level } from "../game/level";
+import { GLOBAL_PALLETE, type RGB } from "../game/color";
 import type { Frog } from "../game/types";
 import { loadImage } from "../utils/load-image";
 import type { LayoutFrame } from "../viewport";
@@ -14,7 +13,7 @@ import { getEntityVisualPosition } from "./path-interpolation";
 import { getPoolEntityPosition } from "./pool-layout";
 import { getWaitingAreaPosition } from "./waiting-area-layout";
 
-export const HALF_FROG_SIZE = FROG_SIZE / 2;
+export const FROG_CENTER = FROG_SIZE / 2;
 
 const maskImg = loadImage(maskUrl);
 const lightingImg = loadImage(lightingUrl);
@@ -92,10 +91,23 @@ function getFrogSprite(color: RGB) {
 	return sprite;
 }
 
+function drawFrogSprite(
+	ctx: CanvasRenderingContext2D,
+	sprite: HTMLCanvasElement | null,
+	position: { x: number; y: number; rotation?: number },
+) {
+	if (sprite) {
+		ctx.save();
+		ctx.translate(position.x, position.y);
+		ctx.rotate(position.rotation || 0);
+		ctx.drawImage(sprite, -FROG_CENTER, -FROG_CENTER, FROG_SIZE, FROG_SIZE);
+		ctx.restore();
+	}
+}
+
 export function drawFrogOnPath(
 	ctx: CanvasRenderingContext2D,
 	frog: Frog,
-	level: Level,
 	pathSegments: PathSegment[],
 	constraints: EngineConstraints,
 	gridLayout: GridLayout,
@@ -107,22 +119,10 @@ export function drawFrogOnPath(
 		pathSegments,
 		gridLayout,
 	);
-	const color = level.palette[frog.resourceType];
+	const color = GLOBAL_PALLETE[frog.resourceType];
 	const sprite = getFrogSprite(color.rgb);
 
-	if (sprite) {
-		ctx.save();
-		ctx.translate(visualPos.x, visualPos.y);
-		ctx.rotate(visualPos.rotation);
-		ctx.drawImage(
-			sprite,
-			-HALF_FROG_SIZE,
-			-HALF_FROG_SIZE,
-			FROG_SIZE,
-			FROG_SIZE,
-		);
-		ctx.restore();
-	}
+	drawFrogSprite(ctx, sprite, visualPos);
 
 	return visualPos;
 }
@@ -133,26 +133,12 @@ export function drawFrogInPool(
 	columnIndex: number,
 	rowIndex: number,
 	layout: LayoutFrame["feeder"],
-	level: Level,
 ) {
-	const color = level.palette[frog.resourceType];
+	const color = GLOBAL_PALLETE[frog.resourceType];
 	const sprite = getFrogSprite(color.rgb);
 	const pos = getPoolEntityPosition(columnIndex, rowIndex, layout);
 
-	ctx.save();
-	ctx.translate(pos.x, pos.y);
-
-	if (sprite) {
-		ctx.drawImage(
-			sprite,
-			-HALF_FROG_SIZE,
-			-HALF_FROG_SIZE,
-			FROG_SIZE,
-			FROG_SIZE,
-		);
-	}
-
-	ctx.restore();
+	drawFrogSprite(ctx, sprite, pos);
 
 	return pos;
 }
@@ -162,26 +148,12 @@ export function drawFrogInWaitingArea(
 	frog: Frog,
 	slotIndex: number,
 	layout: LayoutFrame["conveyorSlots"],
-	level: Level,
 ) {
-	const color = level.palette[frog.resourceType];
+	const color = GLOBAL_PALLETE[frog.resourceType];
 	const sprite = getFrogSprite(color.rgb);
 	const pos = getWaitingAreaPosition(slotIndex, layout);
 
-	ctx.save();
-	ctx.translate(pos.x, pos.y);
-
-	if (sprite) {
-		ctx.drawImage(
-			sprite,
-			-HALF_FROG_SIZE,
-			-HALF_FROG_SIZE,
-			FROG_SIZE,
-			FROG_SIZE,
-		);
-	}
-
-	ctx.restore();
+	drawFrogSprite(ctx, sprite, pos);
 
 	return pos;
 }

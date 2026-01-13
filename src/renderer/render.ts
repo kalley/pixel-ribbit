@@ -1,5 +1,4 @@
 import type { GameState } from "../engine/types";
-import type { Level } from "../game/level";
 import type { CanvasContext } from "../ui/canvas";
 import { drawFeeder } from "./draw-feeder";
 import { drawTexturedFog } from "./draw-fog";
@@ -17,7 +16,6 @@ export function render(
 	{ canvas, ctx, layout }: CanvasContext,
 	state: GameState | null,
 	renderContext: RenderContext | null,
-	level: Level | null,
 	animationTime: number,
 ) {
 	// Definitely want to think about incremental updates
@@ -31,7 +29,6 @@ export function render(
 	if (
 		renderContext &&
 		state &&
-		level &&
 		["playing", "victory_mode"].includes(state.status)
 	) {
 		renderContext.clickables.clear();
@@ -39,17 +36,16 @@ export function render(
 		drawGameGrid({
 			ctx,
 			grid: state.grid,
-			palette: level.palette,
 			layout: renderContext.gridLayout,
 		});
 
 		drawLilyPads(ctx, state, renderContext.gridLayout);
 		drawTongues(ctx, renderContext, state);
-		drawFrogsOnPath(ctx, state, level, renderContext.gridLayout);
+		drawFrogsOnPath(ctx, state, renderContext.gridLayout);
 
-		drawSlots(ctx, state, level, layout.conveyorSlots, renderContext);
+		drawSlots(ctx, state, layout.conveyorSlots, renderContext);
 
-		drawFeeder(ctx, state, level, layout.feeder, renderContext);
+		drawFeeder(ctx, state, layout.feeder, renderContext);
 	}
 
 	drawTexturedFog(ctx, layout, animationTime);
