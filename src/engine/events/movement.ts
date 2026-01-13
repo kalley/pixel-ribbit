@@ -249,15 +249,20 @@ export function applyEntityCompletedLoop(
 ): void {
 	const entity = state.entityRegistry[event.entityId];
 
-	if (event.satisfied || state.status === "victory_mode") {
+	if (event.satisfied) {
 		// Remove from path
 		state.path.entities = state.path.entities.filter(
 			(e) => e !== event.entityId,
 		);
 		entity.state = "waiting"; // Or could be 'removed'
+	} else if (state.status === "victory_mode") {
+		// In victory mode, unsatisfied frogs reset to start of path and keep going
+		entity.position = {
+			index: 0,
+			ticksAtPosition: 0,
+		};
+		entity.state = "moving";
 	}
-	// If not satisfied and not victory mode, entity will be moved to waiting area
-	// by the ENTITY_TO_WAITING_AREA event
 }
 
 export function applyEntityToWaitingArea(

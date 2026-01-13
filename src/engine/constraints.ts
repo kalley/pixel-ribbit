@@ -77,9 +77,9 @@ export function createValidator(constraints: EngineConstraints) {
 				return { valid: false, reason: "Deployment on cooldown" };
 			}
 
-			const hasAvailableEntity = state.pool.columns.some(
-				(col) => col.entities.length > 0,
-			);
+			const hasAvailableEntity =
+				state.pool.columns.some((col) => col.entities.length > 0) ||
+				state.waitingArea.entities.length > 0;
 			if (!hasAvailableEntity) {
 				return { valid: false, reason: "No entities available" };
 			}

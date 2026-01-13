@@ -14,7 +14,13 @@ export function createFrogGame(level: Level, seed: number): GameState {
 	// Convert pixels to resources
 	const resources = pixels.map((row, rowIdx) =>
 		row.map((pixel, colIdx) =>
-			createPixel(`pixel_${rowIdx}_${colIdx}`, pixel.colorId, rowIdx, colIdx),
+			createPixel(
+				`pixel_${rowIdx}_${colIdx}`,
+				pixel.colorId,
+				rowIdx,
+				colIdx,
+				pixel.alive,
+			),
 		),
 	);
 
