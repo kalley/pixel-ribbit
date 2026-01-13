@@ -1,22 +1,21 @@
 import { FROG_SIZE, SLOT_PADDING, SLOT_SIZE } from "../constants";
-import type { RGB } from "../domain/color";
-import type { Level } from "../domain/level";
 import type { GameState } from "../engine/types";
-import { clickables } from "../ui/clickables";
+import { getFrogHunger } from "../game/types";
 import type { LayoutFrame } from "../viewport";
+import { drawFrogInWaitingArea } from "./draw-frog";
 import { drawOutlinedText } from "./draw-outlined-text";
+import type { RenderContext } from "./render-context";
 
 const STROKE_WIDTH = 2;
 
 export function drawSlots(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
-	level: Level,
 	layout: LayoutFrame["conveyorSlots"],
-	factory: (color: RGB) => HTMLCanvasElement,
+	renderContext: RenderContext,
 ) {
 	ctx.globalCompositeOperation = "source-over";
-	state.conveyorSlots.slots.forEach((cannonId, index) => {
+	state.waitingArea.entities.forEach((frogId, index) => {
 		const offset = STROKE_WIDTH / 2;
 		const x = layout.slotPositions[index];
 		const y = SLOT_PADDING + layout.y - offset;
@@ -25,7 +24,7 @@ export function drawSlots(
 		slot.roundRect(x, y, SLOT_SIZE, SLOT_SIZE, 10);
 
 		// Draw slot background
-		ctx.fillStyle = cannonId
+		ctx.fillStyle = frogId
 			? "rgba(100, 100, 100, 0.8)"
 			: "rgba(50, 50, 50, 0.5)";
 
@@ -37,30 +36,18 @@ export function drawSlots(
 		ctx.stroke(slot);
 
 		// Draw cannon if occupied
-		if (cannonId) {
-			const cannon = state.cannons[cannonId];
-			const color = level.palette[cannon.color];
-			const cX = x + SLOT_SIZE / 2;
-			const cY = y + SLOT_SIZE / 2 + 5;
+		if (frogId) {
+			const frog = state.entityRegistry[frogId];
+			const { x, y } = drawFrogInWaitingArea(ctx, frog, index, layout);
+			drawOutlinedText(ctx, getFrogHunger(frog).toString(), x, y + 4);
 
-			ctx.drawImage(
-				factory(color.rgb),
-				cX - FROG_SIZE / 2,
-				cY - FROG_SIZE / 2,
-				FROG_SIZE,
-				FROG_SIZE,
-			);
-
-			clickables.set(cannonId, {
-				x: cX,
-				y: cY,
+			renderContext.clickables.set(frog.id, {
+				x,
+				y,
 				radius: FROG_SIZE / 2,
-				source: "slot",
+				source: "waiting_area",
 				slotIndex: index,
 			});
-
-			// Shot count
-			drawOutlinedText(ctx, cannon.shotsRemaining.toString(), cX, cY);
 		}
 	});
 }

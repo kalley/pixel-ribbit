@@ -1,60 +1,61 @@
-import { GRID_GAP_RATIO, GRID_X, GRID_Y, TARGET_GRID_SIZE } from "./constants";
-import { createPalette } from "./domain/color";
-import { createLevel, type Level } from "./domain/level";
-import { createGameState } from "./engine/state";
+import { GRID_GAP_RATIO, GRID_SIZE, GRID_X, GRID_Y } from "./constants";
 import { tick } from "./engine/tick";
 import type { GameState } from "./engine/types";
+import { createPalette } from "./game/color";
+import { compileGrid } from "./game/compileGrid";
+import { createLevel, type Level } from "./game/level";
 import { palette } from "./image-processing/color-utils";
 import { getImageData } from "./image-processing/get-image-data";
 import { imageDataToGrid } from "./image-processing/imagedata-to-grid";
 import { posterize } from "./image-processing/posterize";
 import { processImageForGrid } from "./image-processing/resize-image";
-import { compileGrid } from "./level/compileGrid";
-import {
-	calculateGridLayout,
-	type GridLayout,
-} from "./renderer/calculate-grid-layout";
-import { createFrogSpriteFactory } from "./renderer/draw-frog";
+import { calculateGridLayout } from "./renderer/calculate-grid-layout";
 import { render } from "./renderer/render";
 import "./style.css";
-import lightingUrl from "./assets/frog_lighting.png";
-import maskUrl from "./assets/frog_mask.png";
-import outlineUrl from "./assets/frog_outline.png";
+import type { GameEvent } from "./engine/events/movement";
+import { createFrogGame } from "./game/state";
+import {
+	cleanupTongues,
+	createRenderContext,
+	createTongueAnimation,
+	type RenderContext,
+	resetRenderContext,
+} from "./renderer/render-context";
 import { listenForClicks, makeCanvas } from "./ui/canvas";
 import { imageUpload } from "./ui/image-upload";
-import { activeTongues } from "./ui/tongues";
-import { loadImage } from "./utils/load-image";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
 if (!app) {
 	throw new Error("App element not found");
 }
-const imageUrls = [maskUrl, lightingUrl, outlineUrl];
 
-// Load all three, do something when done
-const factory = await Promise.all(
-	imageUrls.map((path) => loadImage(path).promise),
-)
-	.then(([maskImg, lightingImg, outlineImg]) =>
-		createFrogSpriteFactory({
-			maskImg,
-			lightingImg,
-			outlineImg,
-		}),
-	)
-	.catch((error) => {
-		console.error("One or more images failed:", error);
-	});
+let gameState: GameState | null = null;
+let renderContext: RenderContext | null = null;
 
-// Canvas
-let gameState!: GameState;
-let gameLevel!: Level;
-let gridLayout!: GridLayout;
+function initGame(level: Level, seed: number) {
+	gameState = createFrogGame(level, seed);
 
-const { canvas, ctx, layout } = makeCanvas(() => console.log("size changed"));
+	// Create or reset render context
+	const gridLayout = calculateGridLayout(
+		GRID_SIZE,
+		level.pixelsPerSize,
+		GRID_X,
+		GRID_Y,
+		GRID_GAP_RATIO,
+	);
 
-const debug = document.createElement("pre");
+	if (!renderContext) {
+		renderContext = createRenderContext(gridLayout);
+	} else {
+		resetRenderContext(renderContext, gridLayout);
+	}
+
+	// Setup clicks
+	listenForClicks(canvasCtx.canvas, gameState, renderContext);
+}
+
+const canvasCtx = makeCanvas(() => console.log("size changed"));
 
 // Toolbar
 const toolbar = document.createElement("div");
@@ -62,92 +63,110 @@ const toolbar = document.createElement("div");
 toolbar.id = "toolbar";
 toolbar.appendChild(
 	imageUpload(async (file) => {
-		if (!ctx) throw new Error("Canvas context not found");
+		if (!canvasCtx.ctx) throw new Error("Canvas context not found");
 
-		const pixelSize = 48;
+		const pixelSize = 24;
 
 		const imageData = await getImageData(file);
 		const resized = processImageForGrid(imageData, pixelSize);
 		const posterized = posterize(resized, palette);
 
-		gridLayout = calculateGridLayout(
-			TARGET_GRID_SIZE,
-			pixelSize,
-			GRID_X,
-			GRID_Y,
-			GRID_GAP_RATIO,
-		);
-
-		console.log(gridLayout);
-
 		const usedPalette = posterized.usedPalette;
 		const grid = imageDataToGrid(posterized.imageData);
-		gameLevel = createLevel(compileGrid(grid), createPalette(usedPalette));
-		gameState = createGameState(gameLevel, 123);
-
+		const gameLevel = createLevel(
+			compileGrid(grid),
+			pixelSize,
+			createPalette(usedPalette),
+		);
 		isPaused = false;
-		listenForClicks(canvas, gameState);
+		initGame(gameLevel, 123);
 	}),
 );
 
 // Render it all
-app.appendChild(canvas);
+app.appendChild(canvasCtx.canvas);
 app.appendChild(toolbar);
-app.appendChild(debug);
 
 let isPaused = false;
 let lastTime = performance.now();
 let accumulator = 0;
-const TICK_MS = 50;
-const MAX_DELTA = 250; // ms
+const MAX_DELTA = 250; // Prevent spiral of death
 
 function gameLoop(now: number) {
 	const delta = Math.min(now - lastTime, MAX_DELTA);
 	lastTime = now;
 	accumulator += delta;
 
-	if (gameState && !isPaused && gameState.status === "playing") {
-		const nowTick = gameState.tick;
+	if (
+		gameState &&
+		!isPaused &&
+		(gameState.status === "playing" || gameState.status === "victory_mode")
+	) {
+		// Get effective tick rate (faster in victory mode)
+		const effectiveTickMs =
+			gameState.validator.getEffectiveMsPerTick(gameState);
 
-		while (accumulator >= TICK_MS) {
-			const events = tick(gameState, { type: "WAIT" });
+		while (accumulator >= effectiveTickMs) {
+			const currentTick = gameState.tick;
 
+			// Process one game tick
+			const events = tick(gameState, { type: "TICK" });
+
+			// Handle events
 			for (const event of events) {
-				if (event.type === "PIXEL_CLEARED") {
-					activeTongues.set(event.cannonId, {
-						cannonId: event.cannonId,
-						startTick: nowTick,
-						targetX: event.position.x,
-						targetY: event.position.y,
-						duration: 2,
-					});
-				}
-				if (event.type === "GAME_WON" || event.type === "GAME_LOST") {
-					alert(`Game ${event.type === "GAME_WON" ? "Won!" : "Lost!"}`);
-					isPaused = true;
-					break;
-				}
+				handleGameEvent(event, currentTick);
 			}
 
-			accumulator -= TICK_MS;
-		}
-
-		for (const [id, t] of activeTongues) {
-			if (nowTick - t.startTick >= t.duration) {
-				activeTongues.delete(id);
-			}
+			accumulator -= effectiveTickMs;
 		}
 	}
 
-	render(
-		canvas,
-		layout,
-		gridLayout,
-		gameState,
-		gameLevel,
-		factory ?? undefined,
-	);
+	// Render
+	render(canvasCtx, gameState, renderContext, now);
+
 	requestAnimationFrame(gameLoop);
 }
 
+function handleGameEvent(event: GameEvent, currentTick: number): void {
+	switch (event.type) {
+		case "ENTITY_MOVING":
+			// Start tongue animation when entity begins dwelling with food ahead
+			if (event.consumeIntent.willConsume && event.consumeIntent.resource) {
+				renderContext?.activeTongues.set(
+					event.entityId,
+					createTongueAnimation(
+						event.entityId,
+						currentTick,
+						event.consumeIntent.targetPosition?.row ?? 0,
+						event.consumeIntent.targetPosition?.col ?? 0,
+						gameState?.constraints.ticksPerSegment ?? 0,
+					),
+				);
+			}
+			break;
+		case "RESOURCE_CONSUMED": {
+			if (!renderContext) break;
+
+			cleanupTongues(renderContext, currentTick);
+			break;
+		}
+
+		case "GAME_WON":
+			alert("Game Won!");
+			isPaused = true;
+			break;
+
+		case "GAME_LOST":
+			alert(`Game Lost! ${event.reason}`);
+			isPaused = true;
+			break;
+
+		case "VICTORY_MODE_TRIGGERED":
+			console.log("🎉 Victory mode activated!");
+			// Could trigger visual/audio effects here
+			break;
+	}
+}
+
+// Start the game loop
 requestAnimationFrame(gameLoop);

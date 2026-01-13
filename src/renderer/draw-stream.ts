@@ -6,18 +6,6 @@ import {
 	STREAM_WIDTH,
 } from "../constants";
 import type { LayoutFrame } from "../viewport";
-import type { GridLayout } from "./calculate-grid-layout";
-import { getGridVisualBounds } from "./get-visual-bounds";
-
-export type StreamLayout = {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-	streamWidth: number;
-	streamGap: number;
-	borderRadius: number;
-};
 
 type WaveLayer = {
 	color: string;
@@ -26,31 +14,6 @@ type WaveLayer = {
 	frequency: number; // waves per perimeter length
 	phase: number; // current animation offset
 };
-
-export function calculateStreamLayout(
-	gridLayout: GridLayout,
-	streamWidth: number = 56,
-	streamGap: number = 12,
-): StreamLayout {
-	const grid = getGridVisualBounds(gridLayout);
-
-	const inset = streamGap + streamWidth;
-
-	const x = grid.x - inset;
-	const y = grid.y - inset;
-	const width = grid.width + inset * 2;
-	const height = grid.height + inset * 2;
-
-	return {
-		x,
-		y,
-		width,
-		height,
-		streamWidth,
-		streamGap,
-		borderRadius: 20, // fixed visual radius for aesthetics
-	};
-}
 
 // Call this each frame to update wave animation
 let waveLayers: WaveLayer[] | null = null;

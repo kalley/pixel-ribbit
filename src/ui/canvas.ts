@@ -1,11 +1,12 @@
-import { tick } from "../engine/tick";
+import { handleDeployFromPool } from "../engine/events/deploy-from-pool";
+import { handleDeployFromWaitingArea } from "../engine/events/deploy-from-waiting-area";
 import type { GameState } from "../engine/types";
+import type { RenderContext } from "../renderer/render-context";
 import {
 	computeLayout,
 	createViewportState,
 	type LayoutFrame,
 } from "../viewport";
-import { clickables } from "./clickables";
 
 export type CanvasContext = {
 	canvas: HTMLCanvasElement;
@@ -80,6 +81,7 @@ export function makeCanvas(
 export function listenForClicks(
 	canvas: HTMLCanvasElement,
 	gameState: GameState,
+	renderContext: RenderContext,
 ) {
 	canvas.addEventListener("click", (e) => {
 		const rect = canvas.getBoundingClientRect();
@@ -89,24 +91,39 @@ export function listenForClicks(
 		handleCanvasClick(x, y);
 	});
 
-	function handleCanvasClick(x: number, y: number) {
-		for (const [, area] of clickables) {
-			const dx = x - area.x;
-			const dy = y - area.y;
+	canvas.addEventListener("touchend", (e) => {
+		if (!e.touches.length) return;
 
-			if (dx * dx + dy * dy <= area.radius * area.radius) {
-				if (area.source === "slot") {
-					tick(gameState, {
-						type: "DEPLOY_FROM_SLOT",
-						slotIndex: area.slotIndex,
+		const rect = canvas.getBoundingClientRect();
+		const x = e.touches[0].clientX - rect.left;
+		const y = e.touches[0].clientY - rect.top;
+
+		handleCanvasClick(x, y);
+	});
+
+	function handleCanvasClick(x: number, y: number) {
+		for (const [, clickable] of renderContext.clickables) {
+			const dx = x - clickable.x;
+			const dy = y - clickable.y;
+
+			if (dx * dx + dy * dy <= clickable.radius * clickable.radius) {
+				if (
+					clickable.source === "waiting_area" &&
+					clickable.slotIndex !== undefined
+				) {
+					handleDeployFromWaitingArea(gameState, {
+						type: "DEPLOY_FROM_WAITING_AREA",
+						slotIndex: clickable.slotIndex,
 					});
-				} else if (area.source === "feeder") {
-					if (area.rowIndex === 0) {
-						tick(gameState, {
-							type: "DEPLOY_FROM_FEEDER",
-							columnIndex: area.columnIndex,
-						});
-					}
+				} else if (
+					clickable.source === "pool" &&
+					clickable.columnIndex !== undefined &&
+					clickable.rowIndex === 0
+				) {
+					handleDeployFromPool(gameState, {
+						type: "DEPLOY_FROM_POOL",
+						columnIndex: clickable.columnIndex,
+					});
 				}
 				break;
 			}

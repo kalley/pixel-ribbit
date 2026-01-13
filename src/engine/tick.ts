@@ -1,39 +1,69 @@
-import { handleDeployFromFeeder } from "./events/deploy-from-feeder";
-import { handleDeployFromSlot } from "./events/deploy-from-slot";
-import { resolveFiring } from "./events/firing";
-import { checkGameEnd } from "./events/game-end";
-import { advanceConveyor } from "./events/position";
-import type { GameEvent, GameState, PlayerAction } from "./types";
+// engine/tick.ts
 
-export function tick(state: GameState, action: PlayerAction): GameEvent[] {
-	const events: GameEvent[] = [];
+import {
+	advancePathEntities,
+	applyEntityCompletedLoop,
+	applyEntityMoving,
+	applyEntityToWaitingArea,
+	applyGameLost,
+	applyGameWon,
+	applyResourceConsumed,
+	applyVictoryMode,
+	type GameEvent,
+} from "./events/movement";
+import type { GameState } from "./types";
 
-	// Phase 1: Handle player action
-	switch (action.type) {
-		case "DEPLOY_FROM_FEEDER":
-			events.push(...handleDeployFromFeeder(state, action));
-			break;
-		case "DEPLOY_FROM_SLOT":
-			events.push(...handleDeployFromSlot(state, action));
-			break;
-		case "WAIT":
-			// No-op, continue to firing
-			break;
+export interface TickAction {
+	type: "TICK";
+}
+
+/**
+ * Process one game tick
+ */
+export function tick(state: GameState, _action: TickAction): GameEvent[] {
+	if (state.status !== "playing" && state.status !== "victory_mode") {
+		return []; // Game is over
 	}
 
-	// Phase 2: All cannons fire
-	events.push(...resolveFiring(state));
-
-	// Phase 3: Advance conveyor
-	events.push(...advanceConveyor(state));
-
-	// Phase 4: Check game end
-	events.push(...checkGameEnd(state));
-
+	// Increment tick counter
 	state.tick++;
 
-	// Store events for debug/replay
-	state._debug?.eventLog.push(...events);
+	// Advance all entities on the path
+	const events = advancePathEntities(state);
+
+	// Apply all events to state
+	for (const event of events) {
+		applyEvent(state, event);
+	}
 
 	return events;
+}
+
+/**
+ * Apply an event to the game state
+ */
+function applyEvent(state: GameState, event: GameEvent): void {
+	switch (event.type) {
+		case "ENTITY_MOVING":
+			applyEntityMoving(state, event);
+			break;
+		case "ENTITY_COMPLETED_LOOP":
+			applyEntityCompletedLoop(state, event);
+			break;
+		case "ENTITY_TO_WAITING_AREA":
+			applyEntityToWaitingArea(state, event);
+			break;
+		case "RESOURCE_CONSUMED":
+			applyResourceConsumed(state, event);
+			break;
+		case "GAME_LOST":
+			applyGameLost(state, event);
+			break;
+		case "VICTORY_MODE_TRIGGERED":
+			applyVictoryMode(state);
+			break;
+		case "GAME_WON":
+			applyGameWon(state);
+			break;
+	}
 }

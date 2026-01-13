@@ -1,10 +1,22 @@
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+const isSandboxBuild = process.env.BUILD_SANDBOX === "true";
+
 export default defineConfig({
 	base: "/pixel-ribbit/",
 	build: {
 		sourcemap: true,
+		rollupOptions: {
+			input: isSandboxBuild
+				? {
+						main: "index.html",
+						sandbox: "sandbox.html",
+					}
+				: {
+						main: "index.html",
+					},
+		},
 	},
 	plugins: [
 		VitePWA({

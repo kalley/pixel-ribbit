@@ -1,105 +1,102 @@
-import type { ColorId } from "../domain/color";
-import type { Grid } from "../domain/Grid";
+// engine/types.ts
 
-export type GridPosition = {
-	x: number;
-	y: number;
-};
+import type { createValidator, EngineConstraints } from "./constraints";
+import type { PathSegment } from "./path";
 
-export type CannonId = string;
-export type CannonGroupId = string;
+// ============================================
+// CORE ENGINE TYPES
+// ============================================
+//
+export type EntityId = string;
 
-export type ConveyorPosition = {
-	x: number; // Position on perimeter
-	y: number;
-	edge: "top" | "right" | "bottom" | "left";
-	facing: "north" | "east" | "south" | "west";
-};
+export type EntityState = "moving" | "dwelling" | "waiting";
 
-export type Cannon = {
-	id: CannonId;
-	color: ColorId;
-	shotsRemaining: number;
+export interface PathPosition {
+	index: number;
+	ticksAtPosition: number;
+}
 
-	// Location state
-	location:
-		| { type: "feeder" } // In feeder (visible or hidden)
-		| { type: "conveyor"; ticksOnBelt: number; position: ConveyorPosition } // Moving on belt
-		| { type: "slot"; slotIndex: number }; // Parked in slot
+export interface GridPosition {
+	row: number;
+	col: number;
+}
 
-	groupId: CannonGroupId | null;
-};
+export interface Entity {
+	id: EntityId;
+	resourceType: string;
+	capacity: number;
+	consumed: number;
+	position: PathPosition;
+	state: EntityState;
+}
 
-export type CannonGroup = {
-	id: CannonGroupId;
-	cannonIds: CannonId[];
-	slotsRequired: number;
-};
+export interface Resource {
+	id: string;
+	type: string;
+	gridPosition: GridPosition;
+	alive: boolean;
+}
 
-export type Conveyor = {
-	beltLength: number; // Ticks for full lap
-	capacity: number; // Max cannons on belt at once
-	cannonsOnBelt: CannonId[]; // Currently moving
-};
+// ============================================
+// GAME STATE
+// ============================================
 
-export type ConveyorSlots = {
-	slots: (CannonId | null)[]; // Parking spots
-};
+export type GameStatus = "playing" | "victory_mode" | "won" | "lost";
 
-export type FeederColumn = {
-	cannons: CannonId[]; // Bottom to top (bottom-most is deployable)
-	maxVisible: number; // How many to show in this column
-};
+interface EntityColumn {
+	entities: EntityId[]; // Entity IDs
+	maxVisible: number;
+}
 
-export type Feeder = {
-	columns: FeederColumn[];
-};
+export interface GameGrid {
+	width: number;
+	height: number;
+	resources: Resource[][];
+}
 
-export type GameStatus = "playing" | "won" | "lost";
+export interface GamePath {
+	entities: EntityId[];
+	capacity: number;
+	length: number;
+}
 
-export type GameState = {
-	grid: Grid;
+export interface WaitingArea {
+	entities: (EntityId | null)[];
+	capacity: number;
+}
 
-	cannons: Record<CannonId, Cannon>;
-	cannonGroups: Record<CannonGroupId, CannonGroup>;
+export interface EntityPool {
+	columns: EntityColumn[];
+}
 
-	conveyor: Conveyor;
-	conveyorSlots: ConveyorSlots;
+export interface DebugInfo {
+	seed?: number;
+	moveHistory: unknown[]; // Define better later
+	eventLog: unknown[]; // Define better later
+	lastDeployTick?: number;
+}
 
-	feeder: Feeder;
+export type EntityRegistry = Record<string, Entity>;
+
+export interface GameState {
+	constraints: EngineConstraints;
+	validator: ReturnType<typeof createValidator>;
+
+	grid: GameGrid;
+	path: GamePath;
+	waitingArea: WaitingArea;
+	pool: EntityPool;
+
+	entityRegistry: EntityRegistry;
 
 	tick: number;
 	status: GameStatus;
-	_debug: {
-		seed: number;
-		moveHistory: unknown[];
-		eventLog: unknown[];
-	};
-};
 
-export type PlayerAction =
-	| {
-			type: "DEPLOY_FROM_FEEDER";
-			columnIndex: number;
-	  }
-	| {
-			type: "DEPLOY_FROM_SLOT";
-			slotIndex: number;
-	  }
-	| {
-			type: "WAIT";
-	  };
+	_debug: DebugInfo;
+}
 
-export type GameEvent =
-	| {
-			type: "PIXEL_CLEARED";
-			cannonId: CannonId;
-			position: GridPosition;
-			color: ColorId;
-	  }
-	| { type: "CANNON_EXHAUSTED"; cannonId: CannonId }
-	| { type: "CANNON_DEPLOYED_TO_CONVEYOR"; cannonId: CannonId }
-	| { type: "CANNON_ENTERED_SLOT"; cannonId: CannonId; slot: number }
-	| { type: "CANNON_COMPLETED_LAP"; cannonId: CannonId }
-	| { type: "GAME_WON" }
-	| { type: "GAME_LOST" };
+export interface GamePath {
+	entities: EntityId[];
+	capacity: number;
+	segments: PathSegment[]; // Add this - the actual path definition
+}

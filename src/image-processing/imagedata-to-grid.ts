@@ -1,4 +1,4 @@
-import { type ColorId, makeColorId, type RGBA } from "../domain/color";
+import { type ColorId, makeColorId, type RGBA } from "../game/color";
 import { ALPHA_THRESHOLD } from "./posterize";
 
 export type RawPixel = {
