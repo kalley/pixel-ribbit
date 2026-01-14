@@ -8,7 +8,7 @@ import type { RenderContext } from "./render-context";
 
 const STROKE_WIDTH = 2;
 
-export function drawSlots(
+export function drawWaitingArea(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
 	layout: LayoutFrame["conveyorSlots"],

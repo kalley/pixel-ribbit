@@ -1,7 +1,7 @@
 // game/state.ts (frog-specific setup)
 
 import { levelRulesToConstraints } from "../engine/constraints";
-import { SeededRNG } from "../engine/rng";
+import { createSeededRNG } from "../engine/rng";
 import { createGameState as createEngineState } from "../engine/state";
 import type { Entity, GameState } from "../engine/types";
 import type { Level } from "./level";
@@ -9,7 +9,7 @@ import { createFrog, createPixel } from "./types";
 
 export function createFrogGame(level: Level, seed: number): GameState {
 	const { pixels, rules, width, height } = level;
-	const rng = new SeededRNG(seed);
+	const rng = createSeededRNG(seed);
 
 	// Convert pixels to resources
 	const resources = pixels.map((row, rowIdx) =>

@@ -6,7 +6,12 @@ import {
 	getPathSegment,
 	isCornerTransition,
 } from "../path";
-import type { Entity, GameState, GridPosition } from "../types";
+import {
+	type Entity,
+	entitySatisfied,
+	type GameState,
+	type GridPosition,
+} from "../types";
 
 export interface EntityMovingEvent {
 	type: "ENTITY_MOVING";
@@ -131,7 +136,7 @@ function handleEntityMovement(state: GameState, entity: Entity): GameEvent[] {
 
 function handleLoopCompletion(state: GameState, entity: Entity): GameEvent[] {
 	const events: GameEvent[] = [];
-	const satisfied = entity.consumed >= entity.capacity;
+	const satisfied = entitySatisfied(entity);
 
 	events.push({
 		type: "ENTITY_COMPLETED_LOOP",

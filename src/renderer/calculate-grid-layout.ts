@@ -15,10 +15,8 @@ export function calculateGridLayout(
 	gapRatio = 0.1,
 ): GridLayout {
 	const numGaps = gridSize - 1;
-
 	const pixelSize = targetSize / (gridSize + gapRatio * numGaps);
 	const gap = pixelSize * gapRatio;
-
 	const totalGridSize = pixelSize * gridSize + gap * numGaps;
 	const gridPadding = (targetSize - totalGridSize) / 2;
 

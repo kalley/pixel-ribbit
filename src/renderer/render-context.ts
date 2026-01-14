@@ -14,15 +14,25 @@ export interface TongueAnimation {
 	};
 }
 
-export interface Clickable {
+interface BaseClickable {
 	x: number;
 	y: number;
 	radius: number;
 	source: "pool" | "waiting_area";
-	columnIndex?: number;
-	rowIndex?: number;
-	slotIndex?: number;
 }
+
+interface PoolClickable extends BaseClickable {
+	source: "pool";
+	columnIndex: number;
+	rowIndex: number;
+}
+
+interface WaitingAreaClickable extends BaseClickable {
+	source: "waiting_area";
+	slotIndex: number;
+}
+
+export type Clickable = PoolClickable | WaitingAreaClickable;
 
 export interface RenderContext {
 	gridLayout: GridLayout;
@@ -54,12 +64,6 @@ export function createTongueAnimation(
 	targetCol: number,
 	ticksPerSegment: number,
 ): TongueAnimation {
-	// Split the dwell time into phases
-	// For ticksPerSegment = 2:
-	//   Tick 0.0-0.8: Extend
-	//   Tick 0.8-1.0: Hold/grab
-	//   Tick 1.0-2.0: Retract
-
 	const extendTicks = ticksPerSegment * 0.4;
 	const holdTicks = ticksPerSegment * 0.1;
 	const retractTicks = ticksPerSegment * 0.5;
@@ -113,15 +117,20 @@ export function getTongueProgress(
 	return { phase: "done", progress: 0 };
 }
 
+export function isTongueDone(
+	tongue: TongueAnimation,
+	currentTick: number,
+): boolean {
+	return getTongueProgress(tongue, currentTick).phase === "done";
+}
+
 // Update cleanup function
 export function cleanupTongues(
 	context: RenderContext,
 	currentTick: number,
 ): void {
 	for (const [id, tongue] of context.activeTongues) {
-		const totalDuration =
-			tongue.phases.extend + tongue.phases.hold + tongue.phases.retract;
-		if (currentTick - tongue.startTick >= totalDuration) {
+		if (isTongueDone(tongue, currentTick)) {
 			context.activeTongues.delete(id);
 		}
 	}

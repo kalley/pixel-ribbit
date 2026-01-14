@@ -6,7 +6,7 @@ import { drawFrogInPool } from "./draw-frog";
 import { drawOutlinedText } from "./draw-outlined-text";
 import type { RenderContext } from "./render-context";
 
-export function drawFeeder(
+export function drawPool(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
 	layout: LayoutFrame["feeder"],

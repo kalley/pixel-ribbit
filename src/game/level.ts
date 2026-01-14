@@ -25,6 +25,8 @@ type Feeder = {
 
 type Timing = {
 	msPerTick: number;
+	deploymentCooldownTicks: number;
+	victoryModeSpeedup: number;
 };
 
 type LevelRulesOptions = {
@@ -96,7 +98,12 @@ export function createLevel(
 				...rules?.conveyor,
 			},
 			feeder: { columnCount: 3, maxVisibleRows: 3, ...rules?.feeder },
-			timing: { msPerTick: 12, ...rules?.timing },
+			timing: {
+				msPerTick: 12,
+				deploymentCooldownTicks: 4,
+				victoryModeSpeedup: 3,
+				...rules?.timing,
+			},
 		},
 	};
 }

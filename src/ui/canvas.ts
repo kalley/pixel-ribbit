@@ -2,11 +2,17 @@ import { handleDeployFromPool } from "../engine/events/deploy-from-pool";
 import { handleDeployFromWaitingArea } from "../engine/events/deploy-from-waiting-area";
 import type { GameState } from "../engine/types";
 import type { RenderContext } from "../renderer/render-context";
+import { h } from "../utils/h";
 import {
 	computeLayout,
 	createViewportState,
 	type LayoutFrame,
 } from "../viewport";
+
+export type GameContext = {
+	gameState: GameState | null;
+	renderContext: RenderContext | null;
+};
 
 export type CanvasContext = {
 	canvas: HTMLCanvasElement;
@@ -22,22 +28,65 @@ export type CanvasContext = {
 };
 
 export function makeCanvas(
+	gameContext: GameContext,
 	onResize?: (layout: LayoutFrame) => void,
 ): CanvasContext {
-	const canvas = document.createElement("canvas");
-	const ctx = canvas.getContext("2d");
-
-	if (!ctx) {
-		throw new Error("Could not get canvas context");
-	}
-
 	const levelRules = {
 		slotCount: 5,
 		columnCount: 3,
 		maxVisiblePerColumn: 3,
 	};
 
-	let cachedLayout = computeLayout(createViewportState(canvas), levelRules);
+	let cachedLayout: LayoutFrame;
+
+	const handleCanvasClick = (x: number, y: number) => {
+		if (!gameContext.renderContext || !gameContext.gameState) return;
+
+		const { renderContext, gameState } = gameContext;
+
+		for (const [, clickable] of renderContext.clickables) {
+			const dx = x - clickable.x;
+			const dy = y - clickable.y;
+
+			if (dx * dx + dy * dy <= clickable.radius * clickable.radius) {
+				if (clickable.source === "waiting_area") {
+					handleDeployFromWaitingArea(gameState, {
+						type: "DEPLOY_FROM_WAITING_AREA",
+						slotIndex: clickable.slotIndex,
+					});
+				} else if (clickable.source === "pool" && clickable.rowIndex === 0) {
+					handleDeployFromPool(gameState, {
+						type: "DEPLOY_FROM_POOL",
+						columnIndex: clickable.columnIndex,
+					});
+				}
+				break;
+			}
+		}
+	};
+
+	const canvas = h("canvas", {
+		onclick: (e) => {
+			const rect = canvas.getBoundingClientRect();
+			const x = e.clientX - rect.left;
+			const y = e.clientY - rect.top;
+			handleCanvasClick(x, y);
+		},
+		ontouchend: (e) => {
+			if (!e.touches.length) return;
+			const rect = canvas.getBoundingClientRect();
+			const x = e.touches[0].clientX - rect.left;
+			const y = e.touches[0].clientY - rect.top;
+			handleCanvasClick(x, y);
+		},
+		eventOptions: { touchend: { passive: true } },
+	});
+
+	const ctx = canvas.getContext("2d");
+
+	if (!ctx) {
+		throw new Error("Could not get canvas context");
+	}
 
 	const updateLayout = () => {
 		const viewport = createViewportState(canvas);
@@ -57,13 +106,11 @@ export function makeCanvas(
 		canvas.width = viewport.width * viewport.dpr;
 		canvas.height = viewport.height * viewport.dpr;
 		canvas.style.width = `${viewport.width}px`;
-		// canvas.style.height = `${viewport.height}px`;
-
-		const newLayout = updateLayout();
-
-		onResize?.(newLayout);
+		onResize?.(updateLayout());
 	});
 
+	// Initialize layout before observing
+	cachedLayout = computeLayout(createViewportState(canvas), levelRules);
 	resizeObserver.observe(canvas);
 
 	return {
@@ -76,57 +123,4 @@ export function makeCanvas(
 		updateLayout,
 		cleanup: () => resizeObserver.disconnect(),
 	};
-}
-
-export function listenForClicks(
-	canvas: HTMLCanvasElement,
-	gameState: GameState,
-	renderContext: RenderContext,
-) {
-	canvas.addEventListener("click", (e) => {
-		const rect = canvas.getBoundingClientRect();
-		const x = e.clientX - rect.left;
-		const y = e.clientY - rect.top;
-
-		handleCanvasClick(x, y);
-	});
-
-	canvas.addEventListener("touchend", (e) => {
-		if (!e.touches.length) return;
-
-		const rect = canvas.getBoundingClientRect();
-		const x = e.touches[0].clientX - rect.left;
-		const y = e.touches[0].clientY - rect.top;
-
-		handleCanvasClick(x, y);
-	});
-
-	function handleCanvasClick(x: number, y: number) {
-		for (const [, clickable] of renderContext.clickables) {
-			const dx = x - clickable.x;
-			const dy = y - clickable.y;
-
-			if (dx * dx + dy * dy <= clickable.radius * clickable.radius) {
-				if (
-					clickable.source === "waiting_area" &&
-					clickable.slotIndex !== undefined
-				) {
-					handleDeployFromWaitingArea(gameState, {
-						type: "DEPLOY_FROM_WAITING_AREA",
-						slotIndex: clickable.slotIndex,
-					});
-				} else if (
-					clickable.source === "pool" &&
-					clickable.columnIndex !== undefined &&
-					clickable.rowIndex === 0
-				) {
-					handleDeployFromPool(gameState, {
-						type: "DEPLOY_FROM_POOL",
-						columnIndex: clickable.columnIndex,
-					});
-				}
-				break;
-			}
-		}
-	}
 }

@@ -1,11 +1,12 @@
 import type { LevelRules } from "../game/level";
 import type { PathSegment } from "./path";
-import type {
-	Entity,
-	GameGrid,
-	GameState,
-	GridPosition,
-	Resource,
+import {
+	type Entity,
+	entitySatisfied,
+	type GameGrid,
+	type GameState,
+	type GridPosition,
+	type Resource,
 } from "./types";
 
 export interface EngineConstraints {
@@ -41,9 +42,14 @@ export function levelRulesToConstraints(rules: LevelRules): EngineConstraints {
 		waitingAreaCapacity: rules.conveyorSlots.slotCount,
 		msPerTick: rules.timing?.msPerTick ?? DEFAULT_CONSTRAINTS.msPerTick,
 		ticksPerSegment: rules.conveyor.ticksPerPixel,
-		deploymentCooldownTicks: DEFAULT_CONSTRAINTS.deploymentCooldownTicks, // Add to rules if needed
-		poolVisibleCount: 3, // Could derive from feeder.columnCount * maxVisible
-		victoryModeSpeedup: DEFAULT_CONSTRAINTS.victoryModeSpeedup,
+		deploymentCooldownTicks:
+			rules.timing?.deploymentCooldownTicks ??
+			DEFAULT_CONSTRAINTS.deploymentCooldownTicks,
+		poolVisibleCount:
+			rules.feeder?.maxVisibleRows ?? DEFAULT_CONSTRAINTS.poolVisibleCount,
+		victoryModeSpeedup:
+			rules.timing?.victoryModeSpeedup ??
+			DEFAULT_CONSTRAINTS.victoryModeSpeedup,
 	};
 }
 
@@ -93,38 +99,18 @@ export function createValidator(constraints: EngineConstraints) {
 			grid: GameGrid,
 			facing: PathSegment["facing"],
 		): ConsumeCheckResult {
-			const { dx, dy } = getDirectionVector(facing);
+			const hit = findFirstResourceInDirection(gridPosition, grid, facing);
+			if (!hit) return { willConsume: false };
 
-			let x = gridPosition.col;
-			let y = gridPosition.row;
+			const { resource, position } = hit;
 
-			while (
-				y >= 0 &&
-				y < grid.resources.length &&
-				x >= 0 &&
-				x < grid.resources[0].length
-			) {
-				const resource = grid.resources[y]?.[x];
-
-				if (resource?.alive) {
-					if (
-						resource.type === entity.resourceType &&
-						entity.consumed < entity.capacity
-					) {
-						return {
-							willConsume: true,
-							resource,
-							targetPosition: { row: y, col: x },
-							willExhaust: entity.consumed + 1 >= entity.capacity,
-						};
-					}
-
-					// First alive resource blocks the ray, even if wrong type
-					return { willConsume: false };
-				}
-
-				x += dx;
-				y += dy;
+			if (resource.type === entity.resourceType && !entitySatisfied(entity)) {
+				return {
+					willConsume: true,
+					resource,
+					targetPosition: position,
+					willExhaust: entity.consumed + 1 >= entity.capacity,
+				};
 			}
 
 			return { willConsume: false };
@@ -135,7 +121,7 @@ export function createValidator(constraints: EngineConstraints) {
 				return { valid: false, reason: "Victory mode active" };
 			}
 
-			if (entity.consumed >= entity.capacity) {
+			if (entitySatisfied(entity)) {
 				return { valid: false, reason: "Entity satisfied" };
 			}
 
@@ -159,13 +145,8 @@ export function createValidator(constraints: EngineConstraints) {
 				return { canEnter: false };
 			}
 
-			const remainingInPool = state.pool.columns.reduce(
-				(sum, col) => sum + col.entities.length,
-				0,
-			);
-
-			const onPath = state.path.entities.length;
-			const totalRemaining = remainingInPool + onPath;
+			const { inPool, onPath } = countRemainingEntities(state);
+			const totalRemaining = inPool + onPath;
 
 			if (totalRemaining > constraints.pathCapacity) {
 				return {
@@ -181,20 +162,8 @@ export function createValidator(constraints: EngineConstraints) {
 		},
 
 		isGameWon(state: GameState): boolean {
-			const remainingInPool = state.pool.columns.reduce(
-				(sum, col) => sum + col.entities.length,
-				0,
-			);
-
-			if (remainingInPool > 0) return false;
-			if (state.path.entities.length > 0) return false;
-
-			const inWaitingArea = state.waitingArea.entities.filter(
-				(e) => e !== null,
-			).length;
-			if (inWaitingArea > 0) return false;
-
-			return true;
+			const { total } = countRemainingEntities(state);
+			return total === 0;
 		},
 
 		getEffectiveMsPerTick(state: GameState): number {
@@ -206,15 +175,58 @@ export function createValidator(constraints: EngineConstraints) {
 	};
 }
 
+const DIRECTION_VECTORS = {
+	north: { dx: 0, dy: -1 },
+	south: { dx: 0, dy: 1 },
+	east: { dx: 1, dy: 0 },
+	west: { dx: -1, dy: 0 },
+} as const;
+
 function getDirectionVector(facing: PathSegment["facing"]) {
-	switch (facing) {
-		case "north":
-			return { dx: 0, dy: -1 };
-		case "south":
-			return { dx: 0, dy: 1 };
-		case "east":
-			return { dx: 1, dy: 0 };
-		case "west":
-			return { dx: -1, dy: 0 };
+	return DIRECTION_VECTORS[facing];
+}
+
+function countRemainingEntities(state: GameState): {
+	inPool: number;
+	onPath: number;
+	inWaiting: number;
+	total: number;
+} {
+	const inPool = state.pool.columns.reduce(
+		(sum, col) => sum + col.entities.length,
+		0,
+	);
+	const onPath = state.path.entities.length;
+	const inWaiting = state.waitingArea.entities.filter((e) => e !== null).length;
+
+	return {
+		inPool,
+		onPath,
+		inWaiting,
+		total: inPool + onPath + inWaiting,
+	};
+}
+
+function findFirstResourceInDirection(
+	gridPosition: GridPosition,
+	grid: GameGrid,
+	facing: PathSegment["facing"],
+): { resource: Resource; position: GridPosition } | null {
+	const { dx, dy } = getDirectionVector(facing);
+	let { col: x, row: y } = gridPosition;
+	const maxY = grid.resources.length;
+	const maxX = grid.resources[0]?.length ?? 0;
+
+	while (y >= 0 && y < maxY && x >= 0 && x < maxX) {
+		const resource = grid.resources[y]?.[x];
+
+		if (resource?.alive) {
+			return { resource, position: { row: y, col: x } };
+		}
+
+		x += dx;
+		y += dy;
 	}
+
+	return null;
 }

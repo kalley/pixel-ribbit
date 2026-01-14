@@ -100,3 +100,7 @@ export interface GamePath {
 	capacity: number;
 	segments: PathSegment[]; // Add this - the actual path definition
 }
+
+export function entitySatisfied(entity: Entity): boolean {
+	return entity.consumed >= entity.capacity;
+}

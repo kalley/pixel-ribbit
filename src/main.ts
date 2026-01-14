@@ -1,6 +1,5 @@
 import { GRID_GAP_RATIO, GRID_SIZE, GRID_X, GRID_Y } from "./constants";
 import { tick } from "./engine/tick";
-import type { GameState } from "./engine/types";
 import { createPalette } from "./game/color";
 import { compileGrid } from "./game/compileGrid";
 import { createLevel, type Level } from "./game/level";
@@ -18,10 +17,9 @@ import {
 	cleanupTongues,
 	createRenderContext,
 	createTongueAnimation,
-	type RenderContext,
 	resetRenderContext,
 } from "./renderer/render-context";
-import { listenForClicks, makeCanvas } from "./ui/canvas";
+import { type GameContext, makeCanvas } from "./ui/canvas";
 import { imageUpload } from "./ui/image-upload";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -30,11 +28,14 @@ if (!app) {
 	throw new Error("App element not found");
 }
 
-let gameState: GameState | null = null;
-let renderContext: RenderContext | null = null;
+// In main
+const gameContext: GameContext = {
+	gameState: null,
+	renderContext: null,
+};
 
 function initGame(level: Level, seed: number) {
-	gameState = createFrogGame(level, seed);
+	gameContext.gameState = createFrogGame(level, seed);
 
 	// Create or reset render context
 	const gridLayout = calculateGridLayout(
@@ -45,17 +46,14 @@ function initGame(level: Level, seed: number) {
 		GRID_GAP_RATIO,
 	);
 
-	if (!renderContext) {
-		renderContext = createRenderContext(gridLayout);
+	if (!gameContext.renderContext) {
+		gameContext.renderContext = createRenderContext(gridLayout);
 	} else {
-		resetRenderContext(renderContext, gridLayout);
+		resetRenderContext(gameContext.renderContext, gridLayout);
 	}
-
-	// Setup clicks
-	listenForClicks(canvasCtx.canvas, gameState, renderContext);
 }
 
-const canvasCtx = makeCanvas(() => console.log("size changed"));
+const canvasCtx = makeCanvas(gameContext, () => console.log("size changed"));
 
 // Toolbar
 const toolbar = document.createElement("div");
@@ -98,19 +96,22 @@ function gameLoop(now: number) {
 	accumulator += delta;
 
 	if (
-		gameState &&
+		gameContext.gameState &&
 		!isPaused &&
-		(gameState.status === "playing" || gameState.status === "victory_mode")
+		(gameContext.gameState.status === "playing" ||
+			gameContext.gameState.status === "victory_mode")
 	) {
 		// Get effective tick rate (faster in victory mode)
 		const effectiveTickMs =
-			gameState.validator.getEffectiveMsPerTick(gameState);
+			gameContext.gameState.validator.getEffectiveMsPerTick(
+				gameContext.gameState,
+			);
 
 		while (accumulator >= effectiveTickMs) {
-			const currentTick = gameState.tick;
+			const currentTick = gameContext.gameState.tick;
 
 			// Process one game tick
-			const events = tick(gameState, { type: "TICK" });
+			const events = tick(gameContext.gameState, { type: "TICK" });
 
 			// Handle events
 			for (const event of events) {
@@ -122,7 +123,7 @@ function gameLoop(now: number) {
 	}
 
 	// Render
-	render(canvasCtx, gameState, renderContext, now);
+	render(canvasCtx, gameContext.gameState, gameContext.renderContext, now);
 
 	requestAnimationFrame(gameLoop);
 }
@@ -132,22 +133,22 @@ function handleGameEvent(event: GameEvent, currentTick: number): void {
 		case "ENTITY_MOVING":
 			// Start tongue animation when entity begins dwelling with food ahead
 			if (event.consumeIntent.willConsume && event.consumeIntent.resource) {
-				renderContext?.activeTongues.set(
+				gameContext.renderContext?.activeTongues.set(
 					event.entityId,
 					createTongueAnimation(
 						event.entityId,
 						currentTick,
 						event.consumeIntent.targetPosition?.row ?? 0,
 						event.consumeIntent.targetPosition?.col ?? 0,
-						gameState?.constraints.ticksPerSegment ?? 0,
+						gameContext.gameState?.constraints.ticksPerSegment ?? 0,
 					),
 				);
 			}
 			break;
 		case "RESOURCE_CONSUMED": {
-			if (!renderContext) break;
+			if (!gameContext.renderContext) break;
 
-			cleanupTongues(renderContext, currentTick);
+			cleanupTongues(gameContext.renderContext, currentTick);
 			break;
 		}
 
