@@ -1,5 +1,4 @@
-import type { GameState } from "../engine/types";
-import type { CanvasContext } from "../ui/canvas";
+import type { CanvasContext, GameContext } from "../ui/canvas";
 import { drawTexturedFog } from "./draw-fog";
 import { drawFrogsOnPath } from "./draw-frogs-on-path";
 import { drawGameGrid } from "./draw-game-grid";
@@ -10,12 +9,10 @@ import { drawPool } from "./draw-pool";
 import { drawStream, updateWaves } from "./draw-stream";
 import { drawTongues } from "./draw-tongues";
 import { drawWaitingArea } from "./draw-waiting-area";
-import type { RenderContext } from "./render-context";
 
 export function render(
 	{ canvas, ctx, layout }: CanvasContext,
-	state: GameState | null,
-	renderContext: RenderContext | null,
+	{ renderContext, state }: GameContext,
 	animationTime: number,
 ) {
 	// Definitely want to think about incremental updates

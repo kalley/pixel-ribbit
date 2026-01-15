@@ -100,7 +100,7 @@ export function createLevel(
 			feeder: { columnCount: 3, maxVisibleRows: 3, ...rules?.feeder },
 			timing: {
 				msPerTick: 12,
-				deploymentCooldownTicks: 4,
+				deploymentCooldownTicks: Math.ceil(grid.width / 6),
 				victoryModeSpeedup: 3,
 				...rules?.timing,
 			},

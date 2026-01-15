@@ -79,7 +79,10 @@ export function createValidator(constraints: EngineConstraints) {
 
 			const ticksSinceLastDeploy =
 				state.tick - (state._debug.lastDeployTick ?? -Infinity);
-			if (ticksSinceLastDeploy < constraints.deploymentCooldownTicks) {
+			if (
+				ticksSinceLastDeploy <
+				constraints.deploymentCooldownTicks * constraints.msPerTick
+			) {
 				return { valid: false, reason: "Deployment on cooldown" };
 			}
 
@@ -145,13 +148,12 @@ export function createValidator(constraints: EngineConstraints) {
 				return { canEnter: false };
 			}
 
-			const { inPool, onPath } = countRemainingEntities(state);
-			const totalRemaining = inPool + onPath;
+			const { total } = countRemainingEntities(state);
 
-			if (totalRemaining > constraints.pathCapacity) {
+			if (total > constraints.pathCapacity) {
 				return {
 					canEnter: false,
-					remainingEntities: totalRemaining,
+					remainingEntities: total,
 					pathCapacity: constraints.pathCapacity,
 				};
 			}

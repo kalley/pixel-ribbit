@@ -1,26 +1,13 @@
-import { GRID_GAP_RATIO, GRID_SIZE, GRID_X, GRID_Y } from "./constants";
 import { tick } from "./engine/tick";
-import { createPalette } from "./game/color";
-import { compileGrid } from "./game/compileGrid";
-import { createLevel, type Level } from "./game/level";
-import { palette } from "./image-processing/color-utils";
-import { getImageData } from "./image-processing/get-image-data";
-import { imageDataToGrid } from "./image-processing/imagedata-to-grid";
-import { posterize } from "./image-processing/posterize";
-import { processImageForGrid } from "./image-processing/resize-image";
-import { calculateGridLayout } from "./renderer/calculate-grid-layout";
 import { render } from "./renderer/render";
 import "./style.css";
 import type { GameEvent } from "./engine/events/movement";
-import { createFrogGame } from "./game/state";
 import {
 	cleanupTongues,
-	createRenderContext,
 	createTongueAnimation,
-	resetRenderContext,
 } from "./renderer/render-context";
-import { type GameContext, makeCanvas } from "./ui/canvas";
-import { imageUpload } from "./ui/image-upload";
+import { makeApp } from "./ui/app";
+import type { GameContext } from "./ui/canvas";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -30,62 +17,15 @@ if (!app) {
 
 // In main
 const gameContext: GameContext = {
-	gameState: null,
+	state: null,
 	renderContext: null,
+	isPaused: false,
 };
 
-function initGame(level: Level, seed: number) {
-	gameContext.gameState = createFrogGame(level, seed);
+const appContext = makeApp(gameContext);
 
-	// Create or reset render context
-	const gridLayout = calculateGridLayout(
-		GRID_SIZE,
-		level.pixelsPerSize,
-		GRID_X,
-		GRID_Y,
-		GRID_GAP_RATIO,
-	);
+app.appendChild(appContext.app);
 
-	if (!gameContext.renderContext) {
-		gameContext.renderContext = createRenderContext(gridLayout);
-	} else {
-		resetRenderContext(gameContext.renderContext, gridLayout);
-	}
-}
-
-const canvasCtx = makeCanvas(gameContext, () => console.log("size changed"));
-
-// Toolbar
-const toolbar = document.createElement("div");
-
-toolbar.id = "toolbar";
-toolbar.appendChild(
-	imageUpload(async (file) => {
-		if (!canvasCtx.ctx) throw new Error("Canvas context not found");
-
-		const pixelSize = 24;
-
-		const imageData = await getImageData(file);
-		const resized = processImageForGrid(imageData, pixelSize);
-		const posterized = posterize(resized, palette);
-
-		const usedPalette = posterized.usedPalette;
-		const grid = imageDataToGrid(posterized.imageData);
-		const gameLevel = createLevel(
-			compileGrid(grid),
-			pixelSize,
-			createPalette(usedPalette),
-		);
-		isPaused = false;
-		initGame(gameLevel, 123);
-	}),
-);
-
-// Render it all
-app.appendChild(canvasCtx.canvas);
-app.appendChild(toolbar);
-
-let isPaused = false;
 let lastTime = performance.now();
 let accumulator = 0;
 const MAX_DELTA = 250; // Prevent spiral of death
@@ -96,22 +36,20 @@ function gameLoop(now: number) {
 	accumulator += delta;
 
 	if (
-		gameContext.gameState &&
-		!isPaused &&
-		(gameContext.gameState.status === "playing" ||
-			gameContext.gameState.status === "victory_mode")
+		gameContext.state &&
+		!gameContext.isPaused &&
+		["playing", "victory_mode"].includes(gameContext.state.status)
 	) {
 		// Get effective tick rate (faster in victory mode)
-		const effectiveTickMs =
-			gameContext.gameState.validator.getEffectiveMsPerTick(
-				gameContext.gameState,
-			);
+		const effectiveTickMs = gameContext.state.validator.getEffectiveMsPerTick(
+			gameContext.state,
+		);
 
 		while (accumulator >= effectiveTickMs) {
-			const currentTick = gameContext.gameState.tick;
+			const currentTick = gameContext.state.tick;
 
 			// Process one game tick
-			const events = tick(gameContext.gameState, { type: "TICK" });
+			const events = tick(gameContext.state, { type: "TICK" });
 
 			// Handle events
 			for (const event of events) {
@@ -123,7 +61,7 @@ function gameLoop(now: number) {
 	}
 
 	// Render
-	render(canvasCtx, gameContext.gameState, gameContext.renderContext, now);
+	render(appContext.canvasCtx, gameContext, now);
 
 	requestAnimationFrame(gameLoop);
 }
@@ -140,7 +78,7 @@ function handleGameEvent(event: GameEvent, currentTick: number): void {
 						currentTick,
 						event.consumeIntent.targetPosition?.row ?? 0,
 						event.consumeIntent.targetPosition?.col ?? 0,
-						gameContext.gameState?.constraints.ticksPerSegment ?? 0,
+						gameContext.state?.constraints.ticksPerSegment ?? 0,
 					),
 				);
 			}
@@ -153,13 +91,11 @@ function handleGameEvent(event: GameEvent, currentTick: number): void {
 		}
 
 		case "GAME_WON":
-			alert("Game Won!");
-			isPaused = true;
+			appContext.onWin();
 			break;
 
 		case "GAME_LOST":
-			alert(`Game Lost! ${event.reason}`);
-			isPaused = true;
+			appContext.onLoss();
 			break;
 
 		case "VICTORY_MODE_TRIGGERED":

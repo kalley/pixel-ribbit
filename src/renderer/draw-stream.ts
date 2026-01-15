@@ -19,28 +19,28 @@ type WaveLayer = {
 const waveLayers = [
 	{
 		color: "rgba(140, 200, 230, 0.12)",
-		speed: 0.04,
+		speed: 0.08,
 		amplitude: 4,
 		frequency: 0.02,
 		phase: 0,
 	},
 	{
 		color: "rgba(100, 170, 210, 0.2)",
-		speed: 0.01,
+		speed: 0.02,
 		amplitude: 6,
 		frequency: 0.015,
 		phase: 0,
 	},
 	{
 		color: "rgba(70, 140, 190, 0.25)",
-		speed: 0.012,
+		speed: 0.024,
 		amplitude: 7,
 		frequency: 0.012,
 		phase: 0,
 	},
 	{
 		color: "rgba(70, 140, 190, 0.1)",
-		speed: 0.002,
+		speed: 0.004,
 		amplitude: 9,
 		frequency: 0.012,
 		phase: 0,

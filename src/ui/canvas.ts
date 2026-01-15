@@ -10,8 +10,9 @@ import {
 } from "../viewport";
 
 export type GameContext = {
-	gameState: GameState | null;
+	state: GameState | null;
 	renderContext: RenderContext | null;
+	isPaused: boolean;
 };
 
 export type CanvasContext = {
@@ -40,9 +41,9 @@ export function makeCanvas(
 	let cachedLayout: LayoutFrame;
 
 	const handleCanvasClick = (x: number, y: number) => {
-		if (!gameContext.renderContext || !gameContext.gameState) return;
+		if (!gameContext.renderContext || !gameContext.state) return;
 
-		const { renderContext, gameState } = gameContext;
+		const { renderContext, state: gameState } = gameContext;
 
 		for (const [, clickable] of renderContext.clickables) {
 			const dx = x - clickable.x;

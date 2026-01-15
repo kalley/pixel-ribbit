@@ -1,5 +1,7 @@
 import type { JSX } from "solid-js";
 
+export type Children = (HTMLElement | Text | string | null | undefined)[];
+
 type EventListenerOptions = {
 	passive?: boolean;
 	capture?: boolean;
@@ -37,7 +39,7 @@ function isString(value: unknown): value is string {
 
 function appendChildren(
 	element: HTMLElement | DocumentFragment,
-	children: (HTMLElement | Text | string | null | undefined)[],
+	children: Children,
 ) {
 	children.flat().forEach((child) => {
 		if (child == null) return;
@@ -50,7 +52,7 @@ function appendChildren(
 export function h<T extends keyof HTMLElementTagNameMap>(
 	tag: T,
 	props: Partial<HTMLPropsWithEventOptions<T>> = {},
-	...children: (HTMLElement | Text | string | null | undefined)[]
+	...children: Children
 ): HTMLElementTagNameMap[T] {
 	const element = document.createElement(tag);
 
@@ -80,9 +82,7 @@ export function h<T extends keyof HTMLElementTagNameMap>(
 	return element;
 }
 
-export function createFragment(
-	...children: (HTMLElement | Text | string | null | undefined)[]
-): DocumentFragment {
+export function createFragment(...children: Children): DocumentFragment {
 	const fragment = document.createDocumentFragment();
 
 	appendChildren(fragment, children);

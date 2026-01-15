@@ -125,17 +125,15 @@ function computeColumnPositions(columnCount: number): number[] {
 
 function computeFeederHeight(visibleRows: number): number {
 	return (
-		FEEDER_PADDING * 2 +
+		FEEDER_PADDING +
 		FEEDER_CELL_SIZE * visibleRows +
 		FEEDER_ROW_SPACING * (visibleRows - 1)
 	);
 }
 
 function computeMaxFeederRows(availableHeight: number): number {
-	// How many rows can physically fit in available space?
-	const availableForRows = availableHeight - FEEDER_PADDING;
 	return Math.floor(
-		(availableForRows + FEEDER_ROW_SPACING) /
+		(availableHeight + FEEDER_ROW_SPACING) /
 			(FEEDER_CELL_SIZE + FEEDER_ROW_SPACING),
 	);
 }
