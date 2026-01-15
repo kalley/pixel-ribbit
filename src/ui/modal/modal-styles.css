@@ -1,0 +1,28 @@
+.pixel-modal {
+	padding: 0;
+	border: 8px solid #3d2614; /* Dark wood border */
+	background: #7d5030; /* Lighter wood background */
+	color: white;
+	font-family: "Press Start 2P", system-ui;
+	image-rendering: pixelated; /* Keeps borders crisp */
+	box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.3); /* Chunky retro shadow */
+}
+
+/* The backdrop (background dimming) */
+.pixel-modal::backdrop {
+	background: rgba(0, 0, 0, 0.7);
+	backdrop-filter: blur(2px); /* Optional modern touch */
+}
+
+.modal-content {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	padding: 2rem;
+	text-align: center;
+	border: 4px solid #a6724d; /* Inner bevel effect */
+}
+
+.modal-content menu {
+	padding: 0;
+}

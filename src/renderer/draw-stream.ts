@@ -16,42 +16,38 @@ type WaveLayer = {
 };
 
 // Call this each frame to update wave animation
-let waveLayers: WaveLayer[] | null = null;
+const waveLayers = [
+	{
+		color: "rgba(140, 200, 230, 0.12)",
+		speed: 0.08,
+		amplitude: 4,
+		frequency: 0.02,
+		phase: 0,
+	},
+	{
+		color: "rgba(100, 170, 210, 0.2)",
+		speed: 0.02,
+		amplitude: 6,
+		frequency: 0.015,
+		phase: 0,
+	},
+	{
+		color: "rgba(70, 140, 190, 0.25)",
+		speed: 0.024,
+		amplitude: 7,
+		frequency: 0.012,
+		phase: 0,
+	},
+	{
+		color: "rgba(70, 140, 190, 0.1)",
+		speed: 0.004,
+		amplitude: 9,
+		frequency: 0.012,
+		phase: 0,
+	},
+] satisfies WaveLayer[];
 
 export function updateWaves(deltaTime: number = 1) {
-	if (!waveLayers) {
-		waveLayers = [
-			{
-				color: "rgba(140, 200, 230, 0.12)",
-				speed: 0.04,
-				amplitude: 4,
-				frequency: 0.02,
-				phase: 0,
-			},
-			{
-				color: "rgba(100, 170, 210, 0.2)",
-				speed: 0.01,
-				amplitude: 6,
-				frequency: 0.015,
-				phase: 0,
-			},
-			{
-				color: "rgba(70, 140, 190, 0.25)",
-				speed: 0.012,
-				amplitude: 7,
-				frequency: 0.012,
-				phase: 0,
-			},
-			{
-				color: "rgba(70, 140, 190, 0.1)",
-				speed: 0.002,
-				amplitude: 9,
-				frequency: 0.012,
-				phase: 0,
-			},
-		];
-	}
-
 	waveLayers.forEach((layer) => {
 		layer.phase -= layer.speed * deltaTime;
 	});
@@ -89,11 +85,9 @@ export function drawStream(
 	ctx.fill(outerPath);
 
 	// Draw animated wave layers
-	if (waveLayers) {
-		waveLayers.forEach((layer, layerIndex) => {
-			drawWaveLayer(ctx, layout, layer, layerIndex);
-		});
-	}
+	waveLayers.forEach((layer, layerIndex) => {
+		drawWaveLayer(ctx, layout, layer, layerIndex);
+	});
 
 	// Set up clipping: only draw in the stream band area
 	ctx.clip(outerPath);
@@ -103,12 +97,6 @@ export function drawStream(
 	ctx.globalCompositeOperation = "source-over";
 
 	ctx.restore();
-
-	// Draw borders for definition
-	// ctx.strokeStyle = "rgba(80, 130, 180, 0.5)";
-	// ctx.lineWidth = 2;
-	// ctx.stroke(outerPath);
-	// ctx.stroke(innerPath);
 }
 
 function drawWaveLayer(

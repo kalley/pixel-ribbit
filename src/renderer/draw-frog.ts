@@ -103,6 +103,8 @@ function drawFrogSprite(
 		ctx.drawImage(sprite, -FROG_CENTER, -FROG_CENTER, FROG_SIZE, FROG_SIZE);
 		ctx.restore();
 	}
+
+	return position;
 }
 
 export function drawFrogOnPath(
@@ -122,9 +124,7 @@ export function drawFrogOnPath(
 	const color = GLOBAL_PALLETE[frog.resourceType];
 	const sprite = getFrogSprite(color.rgb);
 
-	drawFrogSprite(ctx, sprite, visualPos);
-
-	return visualPos;
+	return drawFrogSprite(ctx, sprite, visualPos);
 }
 
 export function drawFrogInPool(
@@ -138,9 +138,7 @@ export function drawFrogInPool(
 	const sprite = getFrogSprite(color.rgb);
 	const pos = getPoolEntityPosition(columnIndex, rowIndex, layout);
 
-	drawFrogSprite(ctx, sprite, pos);
-
-	return pos;
+	return drawFrogSprite(ctx, sprite, pos);
 }
 
 export function drawFrogInWaitingArea(
@@ -153,7 +151,5 @@ export function drawFrogInWaitingArea(
 	const sprite = getFrogSprite(color.rgb);
 	const pos = getWaitingAreaPosition(slotIndex, layout);
 
-	drawFrogSprite(ctx, sprite, pos);
-
-	return pos;
+	return drawFrogSprite(ctx, sprite, pos);
 }

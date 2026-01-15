@@ -1,21 +1,18 @@
-import type { GameState } from "../engine/types";
-import type { CanvasContext } from "../ui/canvas";
-import { drawFeeder } from "./draw-feeder";
+import type { CanvasContext, GameContext } from "../ui/canvas";
 import { drawTexturedFog } from "./draw-fog";
 import { drawFrogsOnPath } from "./draw-frogs-on-path";
 import { drawGameGrid } from "./draw-game-grid";
 import { drawLily } from "./draw-lily";
-import { drawLilyPads } from "./draw-lily-pad";
+import { drawLilyPadsAtRest, drawLilyPadsOnPath } from "./draw-lily-pad";
 import { drawLog } from "./draw-log";
-import { drawSlots } from "./draw-slots";
+import { drawPool } from "./draw-pool";
 import { drawStream, updateWaves } from "./draw-stream";
 import { drawTongues } from "./draw-tongues";
-import type { RenderContext } from "./render-context";
+import { drawWaitingArea } from "./draw-waiting-area";
 
 export function render(
 	{ canvas, ctx, layout }: CanvasContext,
-	state: GameState | null,
-	renderContext: RenderContext | null,
+	{ renderContext, state }: GameContext,
 	animationTime: number,
 ) {
 	// Definitely want to think about incremental updates
@@ -23,6 +20,12 @@ export function render(
 
 	updateWaves();
 	drawStream(ctx, layout.core);
+	drawLilyPadsAtRest(
+		ctx,
+		layout.core,
+		state?.path.capacity,
+		state?.path.entities.length,
+	);
 
 	drawLog(ctx, layout.conveyorSlots);
 
@@ -39,15 +42,15 @@ export function render(
 			layout: renderContext.gridLayout,
 		});
 
-		drawLilyPads(ctx, state, renderContext.gridLayout);
+		drawLilyPadsOnPath(ctx, state, renderContext.gridLayout);
 		drawTongues(ctx, renderContext, state);
 		drawFrogsOnPath(ctx, state, renderContext.gridLayout);
 
-		drawSlots(ctx, state, layout.conveyorSlots, renderContext);
+		drawWaitingArea(ctx, state, layout.conveyorSlots, renderContext);
 
-		drawFeeder(ctx, state, layout.feeder, renderContext);
+		drawPool(ctx, state, layout.feeder, renderContext);
 	}
 
 	drawTexturedFog(ctx, layout, animationTime);
-	drawLily(ctx, layout.core, state?.path.entities.length, state?.path.capacity);
+	drawLily(ctx, layout.core);
 }

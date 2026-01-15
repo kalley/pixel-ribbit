@@ -1,77 +1,80 @@
 export type WeightedOption<T> = { value: T; weight: number };
 
-export class SeededRNG {
-	private state: number;
+export interface SeededRNG {
+	next(): number;
+	nextInt(min: number, max: number): number;
+	nextIntStep(min: number, max: number, step: number): number;
+	choice<T>(array: T[]): T;
+	weightedChoice<T>(options: T[], weights: number[]): T;
+	weightedChoiceObj<T>(options: WeightedOption<T>[]): T;
+	shuffle<T>(array: T[]): T[];
+}
 
-	constructor(seed: number) {
-		this.state = seed;
-	}
+export function createSeededRNG(seed: number): SeededRNG {
+	let state = seed >>> 0; // ensure uint32
 
-	// Returns a float between 0 and 1
-	next(): number {
-		// Linear congruential generator (LCG)
-		// These magic numbers are from Numerical Recipes
-		this.state = (this.state * 1664525 + 1013904223) % 2 ** 32;
-		return this.state / 2 ** 32;
-	}
+	const next = () => {
+		state = (state * 1664525 + 1013904223) >>> 0;
+		return state / 2 ** 32;
+	};
 
-	// Returns integer between min (inclusive) and max (exclusive)
-	nextInt(min: number, max: number): number {
-		return Math.floor(this.next() * (max - min)) + min;
-	}
+	const nextInt = (min: number, max: number) =>
+		Math.floor(next() * (max - min)) + min;
 
-	// Returns integer between min and max, aligned to step
-	nextIntStep(min: number, max: number, step: number): number {
+	const nextIntStep = (min: number, max: number, step: number) => {
 		const range = Math.floor((max - min) / step);
-		return min + this.nextInt(0, range + 1) * step;
-	}
+		return min + nextInt(0, range + 1) * step;
+	};
 
-	// Pick random element from array
-	choice<T>(array: T[]): T {
+	const choice = <T>(array: T[]): T => {
 		if (array.length === 0) {
 			throw new Error("Cannot choose from empty array");
 		}
-		return array[this.nextInt(0, array.length)];
-	}
+		return array[nextInt(0, array.length)];
+	};
 
-	// Weighted choice - weights don't need to sum to 1
-	weightedChoice<T>(options: T[], weights: number[]): T {
+	const weightedChoice = <T>(options: T[], weights: number[]): T => {
 		if (options.length !== weights.length) {
 			throw new Error("Options and weights must have same length");
 		}
 
 		const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-
 		if (totalWeight === 0) {
 			throw new Error("Total weight must be greater than zero");
 		}
 
-		let random = this.next() * totalWeight;
+		let r = next() * totalWeight;
 
 		for (let i = 0; i < options.length; i++) {
-			random -= weights[i];
-			if (random <= 0) {
-				return options[i];
-			}
+			r -= weights[i];
+			if (r <= 0) return options[i];
 		}
 
-		// Fallback (shouldn't happen with valid weights)
 		return options[options.length - 1];
-	}
+	};
 
-	weightedChoiceObj<T>(options: WeightedOption<T>[]): T {
-		const values = options.map((o) => o.value);
-		const weights = options.map((o) => o.weight);
-		return this.weightedChoice(values, weights);
-	}
+	const weightedChoiceObj = <T>(options: WeightedOption<T>[]): T =>
+		weightedChoice(
+			options.map((o) => o.value),
+			options.map((o) => o.weight),
+		);
 
-	// Shuffle array (Fisher-Yates)
-	shuffle<T>(array: T[]): T[] {
+	const shuffle = <T>(array: T[]): T[] => {
 		const result = [...array];
 		for (let i = result.length - 1; i > 0; i--) {
-			const j = this.nextInt(0, i + 1);
+			const j = nextInt(0, i + 1);
 			[result[i], result[j]] = [result[j], result[i]];
 		}
 		return result;
-	}
+	};
+
+	return {
+		next,
+		nextInt,
+		nextIntStep,
+		choice,
+		weightedChoice,
+		weightedChoiceObj,
+		shuffle,
+	};
 }

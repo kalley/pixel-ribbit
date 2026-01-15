@@ -1,16 +1,16 @@
+import { h } from "../utils/h";
+
 export function imageUpload(onUpload: (file: File) => void) {
-	const input = document.createElement("input");
+	return h("input", {
+		type: "file",
+		accept: "image/*",
+		onChange: (event) => {
+			const image = Array.from(event.target.files ?? []).at(0);
 
-	input.type = "file";
-	input.accept = "image/*";
+			if (!image) return;
 
-	input.addEventListener("change", async () => {
-		const image = Array.from(input.files ?? []).at(0);
-
-		if (!image) return;
-
-		onUpload(image);
+			onUpload(image);
+			event.target.value = "";
+		},
 	});
-
-	return input;
 }

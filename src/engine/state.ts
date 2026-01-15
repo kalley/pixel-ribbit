@@ -62,9 +62,7 @@ export function createGameState(config: GameStateConfig): GameState {
 			capacity: config.constraints.waitingAreaCapacity,
 		},
 
-		pool: {
-			columns,
-		},
+		pool: { columns },
 
 		entityRegistry,
 

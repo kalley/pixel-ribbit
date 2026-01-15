@@ -28,7 +28,7 @@ export function drawTexturedFog(
 	// Start layers MUCH higher and with more dramatic speed differences
 	const layers: FogLayer[] = [
 		{
-			startY: fogHeight, // Start at the very top
+			startY: 0, // Start at the very top
 			endY: fogHeight,
 			color: "190, 200, 230",
 			opacity: 0.9,
@@ -36,20 +36,12 @@ export function drawTexturedFog(
 			speed: 0.15, // Slow
 		},
 		{
-			startY: fogHeight, // Also from top
+			startY: 0, // Also from top
 			endY: fogHeight,
 			color: "200, 215, 235",
 			opacity: 0.9,
 			cloudScale: 85,
 			speed: 0.35, // Faster
-		},
-		{
-			startY: 0,
-			endY: fogHeight,
-			color: "205, 220, 240",
-			opacity: 0.85,
-			cloudScale: 65,
-			speed: 0.6, // Even faster
 		},
 		{
 			startY: 0,

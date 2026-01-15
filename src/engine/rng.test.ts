@@ -1,10 +1,10 @@
-import { SeededRNG, type WeightedOption } from "./rng";
+import { createSeededRNG, type WeightedOption } from "./rng";
 
 describe("SeededRNG", () => {
 	describe("determinism", () => {
 		it("produces the same sequence for the same seed", () => {
-			const rng1 = new SeededRNG(123);
-			const rng2 = new SeededRNG(123);
+			const rng1 = createSeededRNG(123);
+			const rng2 = createSeededRNG(123);
 
 			const values1 = Array.from({ length: 10 }, () => rng1.next());
 			const values2 = Array.from({ length: 10 }, () => rng2.next());
@@ -13,8 +13,8 @@ describe("SeededRNG", () => {
 		});
 
 		it("produces different sequences for different seeds", () => {
-			const rng1 = new SeededRNG(1);
-			const rng2 = new SeededRNG(2);
+			const rng1 = createSeededRNG(1);
+			const rng2 = createSeededRNG(2);
 
 			expect(rng1.next()).not.toBe(rng2.next());
 		});
@@ -22,7 +22,7 @@ describe("SeededRNG", () => {
 
 	describe("next()", () => {
 		it("returns values in [0, 1)", () => {
-			const rng = new SeededRNG(42);
+			const rng = createSeededRNG(42);
 
 			for (let i = 0; i < 1000; i++) {
 				const value = rng.next();
@@ -34,7 +34,7 @@ describe("SeededRNG", () => {
 
 	describe("nextInt()", () => {
 		it("returns integers within the given range", () => {
-			const rng = new SeededRNG(99);
+			const rng = createSeededRNG(99);
 
 			for (let i = 0; i < 1000; i++) {
 				const value = rng.nextInt(5, 10);
@@ -45,21 +45,21 @@ describe("SeededRNG", () => {
 		});
 
 		it("nextInt(0, 1) always returns 0", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 			for (let i = 0; i < 100; i++) {
 				expect(rng.nextInt(0, 1)).toBe(0);
 			}
 		});
 
 		it("nextInt with equal bounds returns min", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 			expect(rng.nextInt(5, 5)).toBe(5);
 		});
 	});
 
 	describe("nextIntStep()", () => {
 		it("returns values aligned to step", () => {
-			const rng = new SeededRNG(7);
+			const rng = createSeededRNG(7);
 
 			for (let i = 0; i < 1000; i++) {
 				const value = rng.nextIntStep(0, 10, 2);
@@ -70,12 +70,12 @@ describe("SeededRNG", () => {
 		});
 
 		it("returns min when step exceeds range", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 			expect(rng.nextIntStep(0, 5, 10)).toBe(0);
 		});
 
 		it("respects odd step sizes", () => {
-			const rng = new SeededRNG(2);
+			const rng = createSeededRNG(2);
 			const values = Array.from({ length: 20 }, () =>
 				rng.nextIntStep(1, 10, 3),
 			);
@@ -87,7 +87,7 @@ describe("SeededRNG", () => {
 
 	describe("choice()", () => {
 		it("returns an element from the array", () => {
-			const rng = new SeededRNG(123);
+			const rng = createSeededRNG(123);
 			const options = ["a", "b", "c"];
 
 			for (let i = 0; i < 100; i++) {
@@ -97,27 +97,27 @@ describe("SeededRNG", () => {
 
 		// Potentially have it throw
 		it("returns undefined when choosing from empty array", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 			expect(() => rng.choice([] as number[])).toThrow();
 		});
 	});
 
 	describe("weightedChoice()", () => {
 		it("throws if options and weights length differ", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 
 			expect(() => rng.weightedChoice(["a", "b"], [1])).toThrow();
 		});
 
 		it("returns the only option when one is provided", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 
 			const result = rng.weightedChoice(["only"], [10]);
 			expect(result).toBe("only");
 		});
 
 		it("favors higher-weighted options", () => {
-			const rng = new SeededRNG(42);
+			const rng = createSeededRNG(42);
 			const options = ["low", "high"] as ["low", "high"];
 			const weights = [1, 9];
 
@@ -134,14 +134,14 @@ describe("SeededRNG", () => {
 		});
 
 		it("throws on zero total weight", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 			expect(() => rng.weightedChoice(["a"], [0])).toThrow();
 		});
 	});
 
 	describe("weightedChoiceObj()", () => {
 		it("delegates correctly to weightedChoice", () => {
-			const rng = new SeededRNG(10);
+			const rng = createSeededRNG(10);
 
 			const options: WeightedOption<string>[] = [
 				{ value: "a", weight: 1 },
@@ -161,7 +161,7 @@ describe("SeededRNG", () => {
 
 	describe("shuffle()", () => {
 		it("returns a permutation of the original array", () => {
-			const rng = new SeededRNG(5);
+			const rng = createSeededRNG(5);
 			const array = [1, 2, 3, 4, 5];
 
 			const shuffled = rng.shuffle(array);
@@ -171,8 +171,8 @@ describe("SeededRNG", () => {
 		});
 
 		it("is deterministic for the same seed", () => {
-			const rng1 = new SeededRNG(123);
-			const rng2 = new SeededRNG(123);
+			const rng1 = createSeededRNG(123);
+			const rng2 = createSeededRNG(123);
 
 			const array = [1, 2, 3, 4, 5];
 
@@ -180,7 +180,7 @@ describe("SeededRNG", () => {
 		});
 
 		it("shuffle handles single element", () => {
-			const rng = new SeededRNG(1);
+			const rng = createSeededRNG(1);
 			expect(rng.shuffle([42])).toEqual([42]);
 		});
 	});

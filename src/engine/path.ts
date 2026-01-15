@@ -15,40 +15,41 @@ export interface PathSegment {
 export function generateGridPath(width: number, height: number): PathSegment[] {
 	const path: PathSegment[] = [];
 
-	// Bottom edge (left to right)
-	for (let x = 0; x < width; x++) {
-		path.push({
-			gridPosition: { row: height - 1, col: x },
+	const edges = [
+		{
 			edge: "bottom",
 			facing: "north",
-		});
-	}
-
-	// Right edge (bottom to top)
-	for (let y = height - 1; y >= 0; y--) {
-		path.push({
-			gridPosition: { row: y, col: width - 1 },
+			length: width,
+			at: (i: number) => ({ row: height - 1, col: i }),
+		},
+		{
 			edge: "right",
 			facing: "west",
-		});
-	}
-
-	// Top edge (right to left)
-	for (let x = width - 1; x >= 0; x--) {
-		path.push({
-			gridPosition: { row: 0, col: x },
+			length: height,
+			at: (i: number) => ({ row: height - 1 - i, col: width - 1 }),
+		},
+		{
 			edge: "top",
 			facing: "south",
-		});
-	}
-
-	// Left edge (top to bottom, excluding last to avoid duplicate with start)
-	for (let y = 0; y < height - 1; y++) {
-		path.push({
-			gridPosition: { row: y, col: 0 },
+			length: width,
+			at: (i: number) => ({ row: 0, col: width - 1 - i }),
+		},
+		{
 			edge: "left",
 			facing: "east",
-		});
+			length: height - 1, // avoid re-adding start
+			at: (i: number) => ({ row: i, col: 0 }),
+		},
+	] as const;
+
+	for (const edge of edges) {
+		for (let i = 0; i < edge.length; i++) {
+			path.push({
+				gridPosition: edge.at(i),
+				edge: edge.edge,
+				facing: edge.facing,
+			});
+		}
 	}
 
 	return path;
