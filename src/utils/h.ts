@@ -49,6 +49,10 @@ function appendChildren(
 	});
 }
 
+function isInputElement(element: HTMLElement): element is HTMLInputElement {
+	return element instanceof HTMLInputElement;
+}
+
 export function h<T extends keyof HTMLElementTagNameMap>(
 	tag: T,
 	props: Partial<HTMLPropsWithEventOptions<T>> = {},
@@ -68,6 +72,12 @@ export function h<T extends keyof HTMLElementTagNameMap>(
 			element.className = value;
 		} else if (key === "style" && typeof value === "object") {
 			Object.assign(element.style, value);
+		} else if (
+			isInputElement(element) &&
+			(element.type === "radio" || element.type === "checkbox") &&
+			key === "checked"
+		) {
+			if (value) element.checked = value;
 		} else if (
 			isString(value) ||
 			typeof value === "number" ||

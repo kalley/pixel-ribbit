@@ -3,19 +3,16 @@ import { createPalette } from "../game/color";
 import { compileGrid } from "../game/compileGrid";
 import { createLevel, type Level } from "../game/level";
 import { createFrogGame } from "../game/state";
-import { palette } from "../image-processing/color-utils";
-import { getImageData } from "../image-processing/get-image-data";
 import { imageDataToGrid } from "../image-processing/imagedata-to-grid";
-import { posterize } from "../image-processing/posterize";
-import { processImageForGrid } from "../image-processing/resize-image";
 import { calculateGridLayout } from "../renderer/calculate-grid-layout";
 import {
 	createRenderContext,
 	resetRenderContext,
 } from "../renderer/render-context";
-import { createFragment, h } from "../utils/h";
+import { createFragment } from "../utils/h";
+import { makeButton } from "./button/button";
 import { type GameContext, makeCanvas } from "./canvas";
-import { imageUpload } from "./image-upload";
+import { makeImageUploadModal } from "./image-upload-modal/image-upload-modal";
 import { makeLossDialog } from "./loss-dialog";
 import { makeWinDialog } from "./win-dialog";
 
@@ -40,43 +37,46 @@ function initGame(gameContext: GameContext, level: Level, seed: number) {
 
 export function makeApp(gameContext: GameContext) {
 	const canvasCtx = makeCanvas(gameContext, () => console.log("size changed"));
-	const imageUploader = imageUpload(async (file) => {
-		if (!canvasCtx.ctx) throw new Error("Canvas context not found");
-
-		const pixelSize = 24;
-
-		const imageData = await getImageData(file);
-		const resized = processImageForGrid(imageData, pixelSize);
-		const posterized = posterize(resized, palette);
-
-		const usedPalette = posterized.usedPalette;
-		const grid = imageDataToGrid(posterized.imageData);
-		const gameLevel = createLevel(
-			compileGrid(grid),
-			pixelSize,
-			createPalette(usedPalette),
-		);
-		gameContext.isPaused = false;
-		initGame(gameContext, gameLevel, 123);
-	});
 	const winDialog = makeWinDialog();
 	const lossDialog = makeLossDialog();
+
+	const imageUploadModal = makeImageUploadModal({
+		onConfirm: ({ usedPalette, imageData }, pixelsPerSide) => {
+			uploadButton.style.display = "none";
+			const grid = imageDataToGrid(imageData);
+			const gameLevel = createLevel(
+				compileGrid(grid),
+				pixelsPerSide,
+				createPalette(usedPalette),
+			);
+			gameContext.isPaused = false;
+			initGame(gameContext, gameLevel, 123);
+		},
+	});
+
+	const uploadButton = makeButton(
+		{ class: "upload-button", onClick: () => imageUploadModal.showModal() },
+		"UPLOAD",
+	);
 
 	return {
 		app: createFragment(
 			canvasCtx.canvas,
-			h("div", { id: "toolbar" }, imageUploader),
+			uploadButton,
 			winDialog.element,
 			lossDialog.element,
+			imageUploadModal.element,
 		),
 		canvasCtx,
 		onWin: () => {
 			winDialog.showModal();
 			gameContext.isPaused = true;
+			uploadButton.style.display = "";
 		},
 		onLoss: () => {
 			lossDialog.showModal();
 			gameContext.isPaused = true;
+			uploadButton.style.display = "";
 		},
 	};
 }

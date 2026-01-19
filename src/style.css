@@ -35,3 +35,11 @@ canvas {
 	top: 0;
 	z-index: 10;
 }
+
+.upload-button {
+	cursor: pointer;
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	top: 200px;
+}
