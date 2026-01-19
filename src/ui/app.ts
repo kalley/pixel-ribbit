@@ -42,7 +42,7 @@ export function makeApp(gameContext: GameContext) {
 
 	const imageUploadModal = makeImageUploadModal({
 		onConfirm: ({ usedPalette, imageData }, pixelsPerSide) => {
-			uploadButton.style.display = "none";
+			uploadOverlay.style.display = "none";
 			const grid = imageDataToGrid(imageData);
 			const gameLevel = createLevel(
 				compileGrid(grid),
@@ -54,21 +54,19 @@ export function makeApp(gameContext: GameContext) {
 		},
 	});
 
-	const uploadButton = makeButton(
-		{ class: "upload-button", onClick: () => imageUploadModal.showModal() },
-		"UPLOAD",
+	const uploadOverlay = h(
+		"div",
+		{ class: "upload-overlay" },
+		makeButton(
+			{ class: "upload-button", onClick: () => imageUploadModal.showModal() },
+			"UPLOAD",
+		),
 	);
 
 	return {
 		app: createFragment(
 			canvasCtx.canvas,
-			h(
-				"div",
-				{
-					class: "upload-overlay",
-				},
-				uploadButton,
-			),
+			uploadOverlay,
 			winDialog.element,
 			lossDialog.element,
 			imageUploadModal.element,
@@ -77,12 +75,12 @@ export function makeApp(gameContext: GameContext) {
 		onWin: () => {
 			winDialog.showModal();
 			gameContext.isPaused = true;
-			uploadButton.style.display = "";
+			uploadOverlay.style.display = "";
 		},
 		onLoss: () => {
 			lossDialog.showModal();
 			gameContext.isPaused = true;
-			uploadButton.style.display = "";
+			uploadOverlay.style.display = "";
 		},
 	};
 }
