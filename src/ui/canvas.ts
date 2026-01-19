@@ -45,7 +45,7 @@ export function makeCanvas(
 
 		const { renderContext, state: gameState } = gameContext;
 
-		for (const [, clickable] of renderContext.clickables) {
+		for (const [key, clickable] of renderContext.clickables) {
 			const dx = x - clickable.x;
 			const dy = y - clickable.y;
 
@@ -55,11 +55,13 @@ export function makeCanvas(
 						type: "DEPLOY_FROM_WAITING_AREA",
 						slotIndex: clickable.slotIndex,
 					});
+					renderContext.clickables.delete(key);
 				} else if (clickable.source === "pool" && clickable.rowIndex === 0) {
 					handleDeployFromPool(gameState, {
 						type: "DEPLOY_FROM_POOL",
 						columnIndex: clickable.columnIndex,
 					});
+					renderContext.clickables.delete(key);
 				}
 				break;
 			}

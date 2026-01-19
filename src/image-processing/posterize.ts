@@ -3,7 +3,7 @@ import type { PaletteChoices } from "./color-utils";
 
 export const ALPHA_THRESHOLD = 128; // Ignore pixels that are more than 50% transparent
 
-interface PosterizeResult {
+export interface PosterizeResult {
 	imageData: ImageData;
 	usedPalette: PaletteChoices; // The final N colors selected
 }

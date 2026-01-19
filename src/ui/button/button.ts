@@ -6,6 +6,7 @@ export function makeButton(
 	{
 		class: className,
 		onClick,
+		type = "button",
 	}: {
 		class?: string;
 		onClick?: JSX.EventHandlerUnion<
@@ -13,6 +14,7 @@ export function makeButton(
 			MouseEvent,
 			JSX.EventHandler<HTMLButtonElement, MouseEvent>
 		>;
+		type?: "submit" | "reset" | "button";
 	},
 	...children: Children
 ) {
@@ -21,6 +23,7 @@ export function makeButton(
 		{
 			class: `pixel-btn${className ? ` ${className}` : ""}`,
 			onClick,
+			type,
 		},
 		...children,
 	);

@@ -34,8 +34,6 @@ export function render(
 		state &&
 		["playing", "victory_mode"].includes(state.status)
 	) {
-		renderContext.clickables.clear();
-
 		drawGameGrid({
 			ctx,
 			grid: state.grid,
