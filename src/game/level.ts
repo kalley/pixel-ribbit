@@ -1,8 +1,11 @@
+import { FROG_SIZE, GRID_SIZE } from "../constants";
 import type { WeightedOption } from "../engine/rng";
 import { clamp } from "../utils/clamp";
 import type { Palette } from "./color";
 import type { Grid } from "./Grid";
 import type { Pixel } from "./Pixel";
+
+const SPEED_FACTOR = 288;
 
 type CannonGeneration = {
 	maxInitialShots?: number;
@@ -84,6 +87,7 @@ export function createLevel(
 	rules?: LevelRulesOptions,
 ): Level {
 	const shotWeights = calculateShotWeights(grid, palette);
+	const cellsToWait = Math.ceil((FROG_SIZE * grid.width) / GRID_SIZE);
 
 	return {
 		...grid,
@@ -99,8 +103,8 @@ export function createLevel(
 			},
 			feeder: { columnCount: 3, maxVisibleRows: 3, ...rules?.feeder },
 			timing: {
-				msPerTick: 12,
-				deploymentCooldownTicks: Math.ceil(grid.width / 6),
+				msPerTick: Math.round(SPEED_FACTOR / grid.width),
+				deploymentCooldownTicks: Math.ceil(cellsToWait / 2) * 2,
 				victoryModeSpeedup: 3,
 				...rules?.timing,
 			},

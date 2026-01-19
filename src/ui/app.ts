@@ -9,7 +9,7 @@ import {
 	createRenderContext,
 	resetRenderContext,
 } from "../renderer/render-context";
-import { createFragment } from "../utils/h";
+import { createFragment, h } from "../utils/h";
 import { makeButton } from "./button/button";
 import { type GameContext, makeCanvas } from "./canvas";
 import { makeImageUploadModal } from "./image-upload-modal/image-upload-modal";
@@ -62,7 +62,13 @@ export function makeApp(gameContext: GameContext) {
 	return {
 		app: createFragment(
 			canvasCtx.canvas,
-			uploadButton,
+			h(
+				"div",
+				{
+					class: "upload-overlay",
+				},
+				uploadButton,
+			),
 			winDialog.element,
 			lossDialog.element,
 			imageUploadModal.element,
