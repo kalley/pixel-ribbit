@@ -5,7 +5,7 @@ import type { Palette } from "./color";
 import type { Grid } from "./Grid";
 import type { Pixel } from "./Pixel";
 
-const SPEED_FACTOR = 288;
+const SPEED_FACTOR = 200;
 
 type CannonGeneration = {
 	maxInitialShots?: number;
