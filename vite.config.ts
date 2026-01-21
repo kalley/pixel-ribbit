@@ -7,7 +7,7 @@ export default defineConfig({
 	base: "/pixel-ribbit/",
 	build: {
 		sourcemap: true,
-		minify: false,
+		// minify: false,
 		rollupOptions: {
 			input: isSandboxBuild
 				? {
