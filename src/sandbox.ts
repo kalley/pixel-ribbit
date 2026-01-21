@@ -1,11 +1,12 @@
 import "./style.css";
-import lightingUrl from "./assets/frog_lighting.png";
-import lightingUrlFixed from "./assets/frog_lighting_bright_fixed.png";
-import lightingUrlGamma from "./assets/frog_lighting_bright_gamma.png";
-import lightingUrlLevels from "./assets/frog_lighting_bright_levels.png";
-import lightingUrlSimple from "./assets/frog_lighting_bright_simple.png";
-import maskUrl from "./assets/frog_mask.png";
-import outlineUrl from "./assets/frog_outline.png";
+import lightingUrl from "./assets/frog_lighting.webp";
+import lightingUrlFixed from "./assets/frog_lighting_bright_fixed.webp";
+import lightingUrlGamma from "./assets/frog_lighting_bright_gamma.webp";
+import lightingUrlLevels from "./assets/frog_lighting_bright_levels.webp";
+import lightingUrlSimple from "./assets/frog_lighting_bright_simple.webp";
+import lightingUrlSimpleFix from "./assets/frog_lighting_bright_simple_fix.webp";
+import maskUrl from "./assets/frog_mask.webp";
+import outlineUrl from "./assets/frog_outline.webp";
 import { palette } from "./image-processing/color-utils";
 import { buildFrogSprite } from "./renderer/draw-frog";
 import { loadImage } from "./utils/load-image";
@@ -23,6 +24,7 @@ const lightingImgGamma = loadImage(lightingUrlGamma);
 const lightingImgLevels = loadImage(lightingUrlLevels);
 const lightingImgFixed = loadImage(lightingUrlFixed);
 const outlineImg = loadImage(outlineUrl);
+const lightingImgSimpleFix = loadImage(lightingUrlSimpleFix);
 
 await Promise.all([
 	maskImg.promise,
@@ -32,9 +34,16 @@ await Promise.all([
 	lightingImgLevels.promise,
 	lightingImgFixed.promise,
 	outlineImg.promise,
+	lightingImgSimpleFix.promise,
 ]);
 
-type LightingMode = "default" | "simple" | "gamma" | "levels" | "fixed";
+type LightingMode =
+	| "default"
+	| "simple"
+	| "gamma"
+	| "levels"
+	| "fixed"
+	| "simple-fix";
 
 function drawFrog(
 	lightingMode: LightingMode,
@@ -47,6 +56,7 @@ function drawFrog(
 		gamma: lightingImgGamma,
 		levels: lightingImgLevels,
 		fixed: lightingImgFixed,
+		"simple-fix": lightingImgSimpleFix,
 	}[lightingMode].get();
 	const outline = outlineImg.get();
 
@@ -87,16 +97,35 @@ let y = 0;
 palette.forEach(([r, g, b]) => {
 	ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
 	ctx.fillRect(x, y, 56, 56);
+	ctx.font = "bold 8px SF Mono, Roboto Mono, Menlo"; // Made bold
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = 2;
+	ctx.lineJoin = "round";
+	ctx.strokeText(`${r}\n${g}\n${b}`, x + 28, y + 28);
+	ctx.fillStyle = "white";
+	ctx.fillText(`${r}\n${g}\n${b}`, x + 28, y + 28); // Centered text
 	y += 56;
 });
 
-(["default", "simple", "gamma", "levels", "fixed"] as const).forEach((mode) => {
-	(["screen", "multiply"] as const).forEach((screenMode) => {
+const modes = [
+	"default",
+	// "simple",
+	"simple-fix",
+	// "gamma",
+	// "levels",
+	"fixed",
+] as const;
+
+modes.forEach((mode) => {
+	(["multiply"] as const).forEach((screenMode) => {
+		y = 0;
+		x += 56;
+		console.log(mode, screenMode, x, y, 56, 56);
 		drawFrog(mode, screenMode)?.forEach((sprite) => {
 			ctx.drawImage(sprite, x, y, 56, 56);
 			y += 56;
 		});
-		x += 56;
-		y = 0;
 	});
 });
