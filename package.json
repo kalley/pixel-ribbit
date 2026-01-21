@@ -10,6 +10,7 @@
 		"build": "tsc && vite build",
 		"preview": "vite preview",
 		"test": "vitest",
+		"format": "biome format --write ./src",
 		"lint": "biome check src",
 		"type-check": "tsc --noEmit",
 		"knip": "knip",

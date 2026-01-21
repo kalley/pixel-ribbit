@@ -15,6 +15,8 @@ const fogLayers = [
 	loadImage(fogLayer3),
 ];
 
+const fogCompositeCanvas = document.createElement("canvas");
+
 export function drawTexturedFog(
 	ctx: CanvasRenderingContext2D,
 	layout: LayoutFrame,
@@ -27,18 +29,25 @@ export function drawTexturedFog(
 	const fogEndY = layout.elastic.fogEnd;
 	const fogHeight = fogEndY - fogStartY;
 
+	if (
+		fogCompositeCanvas.width !== layout.width ||
+		fogCompositeCanvas.height !== fogHeight
+	) {
+		fogCompositeCanvas.width = layout.width;
+		fogCompositeCanvas.height = fogHeight;
+	}
+
+	const fogCtx = fogCompositeCanvas.getContext("2d");
+	if (!fogCtx) return;
+
+	fogCtx.clearRect(0, 0, layout.width, fogHeight);
+
 	const layers = [
 		{ color: "190, 200, 230", opacity: 0.9, cloudScale: 120, speed: 0.15 },
 		{ color: "200, 215, 235", opacity: 0.9, cloudScale: 85, speed: 0.35 },
 		{ color: "210, 225, 245", opacity: 0.85, cloudScale: 48, speed: 1.2 },
 		{ color: "215, 230, 248", opacity: 0.8, cloudScale: 55, speed: 0.85 },
 	];
-
-	ctx.save();
-
-	ctx.beginPath();
-	ctx.rect(0, fogStartY, layout.width, fogHeight);
-	ctx.clip();
 
 	for (let i = 0; i < fogLayers.length; i++) {
 		const layer = layers[i];
@@ -57,17 +66,17 @@ export function drawTexturedFog(
 			{ bias: 0.25 },
 		);
 
-		ctx.globalAlpha = layer.opacity;
+		fogCtx.globalAlpha = layer.opacity;
 
 		const tilesX = Math.ceil(layout.width / fogImage.width) + 1;
 		const tilesY = Math.ceil(fogHeight / fogImage.height) + 1;
 
 		for (let ty = -1; ty <= tilesY; ty++) {
 			for (let tx = -1; tx <= tilesX; tx++) {
-				ctx.drawImage(
+				fogCtx.drawImage(
 					fogImage,
 					fogImage.width * tx - xOffset,
-					fogStartY + fogImage.height * ty - yOffset,
+					fogImage.height * ty - yOffset,
 					fogImage.width,
 					fogImage.height,
 				);
@@ -75,17 +84,17 @@ export function drawTexturedFog(
 		}
 	}
 
-	ctx.globalAlpha = 1;
+	fogCtx.globalAlpha = 1;
 
 	// Apply vertical fade gradient as a mask to match original behavior
 	const overlapDistance = FEEDER_FOG_OVERLAP; // The distance it covers above
 	const fadeDistance = fogHeight * 0.5; // Fade over first 50% like original
 
-	const fadeGradient = ctx.createLinearGradient(
+	const fadeGradient = fogCtx.createLinearGradient(
 		0,
-		fogStartY,
 		0,
-		fogStartY + Math.max(overlapDistance, fadeDistance),
+		0,
+		Math.max(overlapDistance, fadeDistance),
 	);
 
 	// Start fully transparent at the top
@@ -109,8 +118,10 @@ export function drawTexturedFog(
 		fadeGradient.addColorStop(i / fadeStops, `rgba(0, 0, 0, ${combinedAlpha})`);
 	}
 
-	ctx.globalCompositeOperation = "destination-out";
-	ctx.fillStyle = fadeGradient;
-	ctx.fillRect(0, fogStartY, layout.width, fogHeight);
-	ctx.restore();
+	fogCtx.globalCompositeOperation = "destination-out";
+	fogCtx.fillStyle = fadeGradient;
+	fogCtx.fillRect(0, 0, layout.width, fogHeight);
+	fogCtx.globalCompositeOperation = "source-over";
+	// Now draw the complete fog to main canvas in one go
+	ctx.drawImage(fogCompositeCanvas, 0, fogStartY);
 }
