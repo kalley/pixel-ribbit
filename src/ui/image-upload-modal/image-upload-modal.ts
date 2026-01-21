@@ -61,10 +61,11 @@ export function makeImageUploadModal({
 		processingIndicator.style.display = "block";
 
 		try {
-			originalImageData = await getImageData(file);
+			const info = await getImageData(file);
+			originalImageData = info.imageData;
 			const resized = processImageForGrid(
 				originalImageData,
-				DIFFICULTY_PRESETS[currentDifficulty].pixelsPerSide,
+				Math.min(256, Math.min(info.height, info.width)),
 			);
 			originalPreviewImg.src = imageDataToDataUrl(resized);
 
@@ -126,11 +127,6 @@ export function makeImageUploadModal({
 		// Update label
 		colorCountLabel.textContent = `Colors: ${currentColorCount} (${preset.minColors}-${preset.maxColors})`;
 
-		const resized = processImageForGrid(
-			originalImageData,
-			preset.pixelsPerSide,
-		);
-		originalPreviewImg.src = imageDataToDataUrl(resized);
 		updatePosterization();
 	}
 

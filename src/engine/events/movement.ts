@@ -54,27 +54,29 @@ export interface GameLostEvent {
 /**
  * Advance all entities on the path by one tick
  */
-export function advancePathEntities(state: GameState): GameEvent[] {
+export function updatePathEntities(
+	state: GameState,
+	deltaMs: number,
+): GameEvent[] {
 	const events: GameEvent[] = [];
 
 	for (const entityId of [...state.path.entities]) {
 		const entity = state.entityRegistry[entityId];
 		const currentSegment = state.path.segments[entity.position.index];
 		const nextSegment = state.path.segments[entity.position.index + 1];
-		entity.position.ticksAtPosition++;
+		entity.position.timeAtPosition += deltaMs;
 
 		// Determine how many ticks needed for this segment
 		// Corners take 2x as long to give smoother visual interpolation
-		const isAtCorner =
+		const msNeeded =
 			currentSegment &&
 			nextSegment &&
-			isCornerTransition(currentSegment, nextSegment);
-		const ticksNeeded = isAtCorner
-			? state.constraints.ticksPerSegment * 3
-			: state.constraints.ticksPerSegment;
+			isCornerTransition(currentSegment, nextSegment)
+				? state.constraints.msPerSegment * 3
+				: state.constraints.msPerSegment;
 
 		// Check if entity should move to next position
-		if (entity.position.ticksAtPosition >= ticksNeeded) {
+		if (entity.position.timeAtPosition >= msNeeded) {
 			const moveEvents = handleEntityMovement(state, entity);
 			events.push(...moveEvents);
 		}
@@ -200,7 +202,7 @@ export function applyEntityMoving(
 	// Update position
 	entity.position = {
 		index: event.toIndex,
-		ticksAtPosition: 0,
+		timeAtPosition: 0,
 	};
 
 	entity.state = event.consumeIntent.willConsume ? "dwelling" : "moving";
@@ -264,7 +266,7 @@ export function applyEntityCompletedLoop(
 		// In victory mode, unsatisfied frogs reset to start of path and keep going
 		entity.position = {
 			index: 0,
-			ticksAtPosition: 0,
+			timeAtPosition: 0,
 		};
 		entity.state = "moving";
 	}

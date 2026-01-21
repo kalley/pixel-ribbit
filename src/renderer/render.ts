@@ -23,6 +23,7 @@ export function render(
 	drawLilyPadsAtRest(
 		ctx,
 		layout.core,
+		state,
 		state?.path.capacity,
 		state?.path.entities.length,
 	);

@@ -9,7 +9,7 @@ import { getTongueProgress } from "./render-context";
 function drawTongue(
 	ctx: CanvasRenderingContext2D,
 	tongue: TongueAnimation,
-	currentTick: number,
+	currentTime: number,
 	state: GameState,
 	gridLayout: GridLayout,
 ) {
@@ -20,15 +20,15 @@ function drawTongue(
 	const entity = state.entityRegistry[tongue.entityId];
 	if (!entity) return;
 
-	const { phase, progress } = getTongueProgress(tongue, currentTick);
+	const { phase, progress } = getTongueProgress(tongue, currentTime);
 
 	if (phase === "done") return;
 
 	// Get frog's current visual position
 	const frogPos = getEntityVisualPosition(
 		entity.position.index,
-		entity.position.ticksAtPosition,
-		state.constraints.ticksPerSegment,
+		entity.position.timeAtPosition,
+		state.constraints.msPerSegment,
 		state.path.segments,
 		gridLayout,
 	);
@@ -80,7 +80,11 @@ export function drawTongues(
 	renderContext: RenderContext,
 	state: GameState,
 ) {
+	// console.log(
+	// 	state.elapsedTime,
+	// 	Object.fromEntries(renderContext.activeTongues.entries()),
+	// );
 	for (const [_entityId, tongue] of renderContext.activeTongues) {
-		drawTongue(ctx, tongue, state.tick, state, renderContext.gridLayout);
+		drawTongue(ctx, tongue, state.elapsedTime, state, renderContext.gridLayout);
 	}
 }

@@ -1,7 +1,6 @@
 // engine/tick.ts
 
 import {
-	advancePathEntities,
 	applyEntityCompletedLoop,
 	applyEntityMoving,
 	applyEntityToWaitingArea,
@@ -10,26 +9,31 @@ import {
 	applyResourceConsumed,
 	applyVictoryMode,
 	type GameEvent,
+	updatePathEntities,
 } from "./events/movement";
 import type { GameState } from "./types";
-
-export interface TickAction {
-	type: "TICK";
-}
 
 /**
  * Process one game tick
  */
-export function tick(state: GameState, _action: TickAction): GameEvent[] {
+export function updateGameState(
+	state: GameState,
+	deltaMs: number,
+): GameEvent[] {
 	if (state.status !== "playing" && state.status !== "victory_mode") {
 		return []; // Game is over
 	}
 
 	// Increment tick counter
-	state.tick++;
+	const effectiveDelta =
+		state.status === "victory_mode"
+			? deltaMs * state.constraints.victoryModeSpeedup
+			: deltaMs;
 
-	// Advance all entities on the path
-	const events = advancePathEntities(state);
+	state.elapsedTime += effectiveDelta;
+
+	// CHANGE: Pass deltaMs to movement update
+	const events = updatePathEntities(state, effectiveDelta);
 
 	// Apply all events to state
 	for (const event of events) {

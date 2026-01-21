@@ -49,7 +49,7 @@ const waveLayers = [
 
 export function updateWaves(deltaTime: number = 1) {
 	waveLayers.forEach((layer) => {
-		layer.phase -= layer.speed * deltaTime;
+		layer.phase -= (layer.speed / 6) * deltaTime;
 	});
 }
 

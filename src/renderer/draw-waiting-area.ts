@@ -8,6 +8,14 @@ import type { RenderContext } from "./render-context";
 
 const STROKE_WIDTH = 2;
 
+function getBackground(isOccupied: boolean, waitingRoomFull: boolean) {
+	return isOccupied
+		? waitingRoomFull
+			? "rgba(180, 50, 50, 0.5)"
+			: "rgba(100, 100, 100, 0.8)"
+		: "rgba(50, 50, 50, 0.5)";
+}
+
 export function drawWaitingArea(
 	ctx: CanvasRenderingContext2D,
 	state: GameState,
@@ -15,6 +23,7 @@ export function drawWaitingArea(
 	renderContext: RenderContext,
 ) {
 	ctx.globalCompositeOperation = "source-over";
+	const waitingRoomFull = state?.waitingArea.entities.every(Boolean);
 	state.waitingArea.entities.forEach((frogId, index) => {
 		const offset = STROKE_WIDTH / 2;
 		const x = layout.slotPositions[index];
@@ -24,14 +33,14 @@ export function drawWaitingArea(
 		slot.roundRect(x, y, SLOT_SIZE, SLOT_SIZE, 10);
 
 		// Draw slot background
-		ctx.fillStyle = frogId
-			? "rgba(100, 100, 100, 0.8)"
-			: "rgba(50, 50, 50, 0.5)";
+		ctx.fillStyle = getBackground(frogId !== null, waitingRoomFull);
 
 		ctx.fill(slot);
 
 		// Draw border
-		ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+		ctx.strokeStyle = waitingRoomFull
+			? "rgba(180, 50, 50, 0.3)"
+			: "rgba(255, 255, 255, 0.3)";
 		ctx.lineWidth = STROKE_WIDTH;
 		ctx.stroke(slot);
 

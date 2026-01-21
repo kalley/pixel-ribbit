@@ -1,6 +1,7 @@
 import { FROG_SIZE, GRID_SIZE } from "../constants";
 import type { WeightedOption } from "../engine/rng";
 import { clamp } from "../utils/clamp";
+import { roundToStep } from "../utils/round-to-step";
 import type { Palette } from "./color";
 import type { Grid } from "./Grid";
 import type { Pixel } from "./Pixel";
@@ -14,7 +15,7 @@ type CannonGeneration = {
 
 type Conveyor = {
 	capacity: number;
-	ticksPerPixel: number;
+	msPerSegment: number;
 };
 
 type ConveyorSlots = {
@@ -27,8 +28,7 @@ type Feeder = {
 };
 
 type Timing = {
-	msPerTick: number;
-	deploymentCooldownTicks: number;
+	deploymentCooldownMs: number;
 	victoryModeSpeedup: number;
 };
 
@@ -57,29 +57,6 @@ export type Level = {
 	rules: LevelRules;
 };
 
-function roundToStep(
-	value: number,
-	step: number,
-	options?: {
-		min?: number;
-		max?: number;
-		bias?: number;
-	},
-): number {
-	if (step <= 0) return value;
-
-	const bias = options?.bias ?? 0;
-	const min = options?.min ?? -Infinity;
-	const max = options?.max ?? Infinity;
-
-	const rounded =
-		bias === 0
-			? Math.round(value / step) * step
-			: Math.floor(value / step + 0.5 + bias) * step;
-
-	return Math.max(min, Math.min(max, rounded));
-}
-
 export function createLevel(
 	grid: Grid,
 	pixelsPerSize: number,
@@ -88,6 +65,7 @@ export function createLevel(
 ): Level {
 	const shotWeights = calculateShotWeights(grid, palette);
 	const cellsToWait = Math.ceil((FROG_SIZE * grid.width) / GRID_SIZE);
+	const msPerSegment = 12 * Math.round(SPEED_FACTOR / grid.width);
 
 	return {
 		...grid,
@@ -98,13 +76,12 @@ export function createLevel(
 			conveyorSlots: { slotCount: 5, ...rules?.conveyorSlots },
 			conveyor: {
 				capacity: 5,
-				ticksPerPixel: 6,
+				msPerSegment,
 				...rules?.conveyor,
 			},
 			feeder: { columnCount: 3, maxVisibleRows: 3, ...rules?.feeder },
 			timing: {
-				msPerTick: Math.round(SPEED_FACTOR / grid.width),
-				deploymentCooldownTicks: Math.ceil(cellsToWait / 2) * 2,
+				deploymentCooldownMs: cellsToWait * msPerSegment,
 				victoryModeSpeedup: 3,
 				...rules?.timing,
 			},

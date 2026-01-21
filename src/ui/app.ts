@@ -49,8 +49,9 @@ export function makeApp(gameContext: GameContext) {
 				pixelsPerSide,
 				createPalette(usedPalette),
 			);
+			console.log(gameLevel);
 			gameContext.isPaused = false;
-			initGame(gameContext, gameLevel, 123);
+			initGame(gameContext, gameLevel, Date.now());
 		},
 	});
 

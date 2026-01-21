@@ -1,4 +1,4 @@
-import { tick } from "./engine/tick";
+import { updateGameState } from "./engine/tick";
 import { render } from "./renderer/render";
 import "./style.css";
 import type { GameEvent } from "./engine/events/movement";
@@ -27,36 +27,22 @@ const appContext = makeApp(gameContext);
 app.appendChild(appContext.app);
 
 let lastTime = performance.now();
-let accumulator = 0;
 const MAX_DELTA = 250; // Prevent spiral of death
 
 function gameLoop(now: number) {
-	const delta = Math.min(now - lastTime, MAX_DELTA);
+	const deltaMs = Math.min(now - lastTime, MAX_DELTA);
 	lastTime = now;
-	accumulator += delta;
 
 	if (
 		gameContext.state &&
 		!gameContext.isPaused &&
 		["playing", "victory_mode"].includes(gameContext.state.status)
 	) {
-		// Get effective tick rate (faster in victory mode)
-		const effectiveTickMs = gameContext.state.validator.getEffectiveMsPerTick(
-			gameContext.state,
-		);
+		// CHANGE: Direct update with deltaMs
+		const events = updateGameState(gameContext.state, deltaMs);
 
-		while (accumulator >= effectiveTickMs) {
-			const currentTick = gameContext.state.tick;
-
-			// Process one game tick
-			const events = tick(gameContext.state, { type: "TICK" });
-
-			// Handle events
-			for (const event of events) {
-				handleGameEvent(event, currentTick);
-			}
-
-			accumulator -= effectiveTickMs;
+		for (const event of events) {
+			handleGameEvent(event, gameContext.state.elapsedTime); // CHANGE: pass elapsedTime
 		}
 	}
 
@@ -66,7 +52,7 @@ function gameLoop(now: number) {
 	requestAnimationFrame(gameLoop);
 }
 
-function handleGameEvent(event: GameEvent, currentTick: number): void {
+function handleGameEvent(event: GameEvent, currentTime: number): void {
 	switch (event.type) {
 		case "ENTITY_MOVING":
 			// Start tongue animation when entity begins dwelling with food ahead
@@ -75,10 +61,10 @@ function handleGameEvent(event: GameEvent, currentTick: number): void {
 					event.entityId,
 					createTongueAnimation(
 						event.entityId,
-						currentTick,
+						currentTime,
 						event.consumeIntent.targetPosition?.row ?? 0,
 						event.consumeIntent.targetPosition?.col ?? 0,
-						gameContext.state?.constraints.ticksPerSegment ?? 0,
+						gameContext.state?.constraints.msPerSegment ?? 0,
 					),
 				);
 			}
@@ -86,7 +72,7 @@ function handleGameEvent(event: GameEvent, currentTick: number): void {
 		case "RESOURCE_CONSUMED": {
 			if (!gameContext.renderContext) break;
 
-			cleanupTongues(gameContext.renderContext, currentTick);
+			cleanupTongues(gameContext.renderContext, currentTime);
 			break;
 		}
 

@@ -69,10 +69,6 @@ export function createFrogGame(level: Level, seed: number): GameState {
 		shuffled = [...small, ...large];
 	}
 
-	// Calculate path length
-	const perimeter = 2 * (width + height) - 4;
-	const pathLength = perimeter * rules.conveyor.ticksPerPixel;
-
 	// Create constraints
 	const constraints = levelRulesToConstraints(rules);
 
@@ -83,7 +79,6 @@ export function createFrogGame(level: Level, seed: number): GameState {
 		resources,
 		gridWidth: width,
 		gridHeight: height,
-		pathLength,
 		poolColumns: rules.feeder.columnCount,
 		seed,
 	});

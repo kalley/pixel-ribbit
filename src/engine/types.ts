@@ -13,7 +13,7 @@ export type EntityState = "moving" | "dwelling" | "waiting";
 
 export interface PathPosition {
 	index: number;
-	ticksAtPosition: number;
+	timeAtPosition: number;
 }
 
 export interface GridPosition {
@@ -57,7 +57,7 @@ export interface GameGrid {
 export interface GamePath {
 	entities: EntityId[];
 	capacity: number;
-	length: number;
+	segments: PathSegment[];
 }
 
 export interface WaitingArea {
@@ -73,7 +73,7 @@ export interface DebugInfo {
 	seed?: number;
 	moveHistory: unknown[]; // Define better later
 	eventLog: unknown[]; // Define better later
-	lastDeployTick?: number;
+	lastDeployTime?: number;
 }
 
 export type EntityRegistry = Record<string, Entity>;
@@ -89,16 +89,10 @@ export interface GameState {
 
 	entityRegistry: EntityRegistry;
 
-	tick: number;
+	elapsedTime: number;
 	status: GameStatus;
 
 	_debug: DebugInfo;
-}
-
-export interface GamePath {
-	entities: EntityId[];
-	capacity: number;
-	segments: PathSegment[]; // Add this - the actual path definition
 }
 
 export function entitySatisfied(entity: Entity): boolean {

@@ -1,4 +1,4 @@
-import flowerUrl from "../assets/lily_flower.png";
+import flowerUrl from "../assets/lily_flower.webp";
 import { CORE_CONTENT_SIZE, CORE_X, STREAM_WIDTH } from "../constants";
 import { loadImage } from "../utils/load-image";
 import type { LayoutFrame } from "../viewport";
