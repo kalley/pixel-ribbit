@@ -1,4 +1,4 @@
-import lightingUrl from "../assets/frog_lighting.webp";
+import lightingUrl from "../assets/frog_lighting_bright_simple_fix.webp";
 import maskUrl from "../assets/frog_mask.webp";
 import outlineUrl from "../assets/frog_outline.webp";
 import { FROG_SIZE } from "../constants";

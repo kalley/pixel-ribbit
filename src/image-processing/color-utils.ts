@@ -74,7 +74,7 @@ export const palette = [
 	[235, 245, 240], // Mint Cream
 
 	// ========== NEW: TRUE DARKS ========== (1)
-	[15, 15, 15], // Near Black
+	// [15, 15, 15], // Near Black
 
 	// --- NEUTRALS (7) ---
 	[45, 45, 50], // Dark Gunmetal
