@@ -16,7 +16,7 @@ export const TOP_RAIL_HEIGHT = 60; // Logo + score + lives
 // ============================================
 // CORE (Stream + Embedded Grid)
 // ============================================
-export const CORE_PADDING = 28; // Visual preference - breathing room
+export const CORE_PADDING = 32; // Visual preference - breathing room
 export const CORE_CONTENT_SIZE = DESIGN_WIDTH - CORE_PADDING * 2; // Stream/grid square size
 export const CORE_HEIGHT = VERTIAL_SPACING + CORE_CONTENT_SIZE;
 
@@ -25,7 +25,7 @@ export const CORE_X = CORE_PADDING;
 const CORE_Y = TOP_RAIL_HEIGHT;
 
 // Stream specifics (for decoration)
-export const STREAM_WIDTH = 56;
+export const STREAM_WIDTH = 48;
 export const STREAM_BORDER_RADIUS = 20;
 
 // Grid (static position, dynamic density)
