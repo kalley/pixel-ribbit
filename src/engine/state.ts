@@ -11,7 +11,6 @@ export interface GameStateConfig {
 	resources: Resource[][];
 	gridWidth: number;
 	gridHeight: number;
-	pathLength: number;
 	poolColumns: number;
 	maxVisiblePerColumn?: number;
 	seed?: number;
@@ -54,7 +53,6 @@ export function createGameState(config: GameStateConfig): GameState {
 			entities: [],
 			capacity: config.constraints.pathCapacity,
 			segments: pathSegments,
-			length: config.pathLength,
 		},
 
 		waitingArea: {
@@ -66,7 +64,7 @@ export function createGameState(config: GameStateConfig): GameState {
 
 		entityRegistry,
 
-		tick: 0,
+		elapsedTime: 0,
 		status: "playing",
 
 		_debug: {

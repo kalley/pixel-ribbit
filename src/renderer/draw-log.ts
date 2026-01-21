@@ -1,4 +1,4 @@
-import logUrl from "../assets/log.png";
+import logUrl from "../assets/log.webp";
 import { LOG_HEIGHT, LOG_WIDTH, SLOT_PADDING } from "../constants";
 import { loadImage } from "../utils/load-image";
 import type { LayoutFrame } from "../viewport";

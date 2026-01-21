@@ -153,8 +153,8 @@ function interpolatePathPosition(
  */
 export function getEntityVisualPosition(
 	pathIndex: number,
-	ticksAtPosition: number,
-	ticksPerSegment: number,
+	timeAtPosition: number,
+	msPerSegment: number,
 	pathSegments: PathSegment[],
 	gridLayout: GridLayout,
 ): VisualPosition {
@@ -168,10 +168,9 @@ export function getEntityVisualPosition(
 	const isCorner = nextSegment
 		? isCornerTransition(currentSegment, nextSegment)
 		: false;
-	const ticksPerUnit = isCorner ? ticksPerSegment * 3 : ticksPerSegment;
+	const msPerUnit = isCorner ? msPerSegment * 3 : msPerSegment;
 	const segmentLength = isCorner ? Math.PI / 2 : 1;
-	const distance = ticksAtPosition / ticksPerUnit;
-	const progress = clamp(distance / segmentLength, 0, 1);
+	const progress = clamp(timeAtPosition / msPerUnit / segmentLength, 0, 1);
 
 	if (progress < 0 || progress > 1) {
 		console.warn("Progress out of bounds", progress);

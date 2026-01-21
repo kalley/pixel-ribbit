@@ -1,6 +1,6 @@
-import lightingUrl from "../assets/frog_lighting.png";
-import maskUrl from "../assets/frog_mask.png";
-import outlineUrl from "../assets/frog_outline.png";
+import lightingUrl from "../assets/frog_lighting.webp";
+import maskUrl from "../assets/frog_mask.webp";
+import outlineUrl from "../assets/frog_outline.webp";
 import { FROG_SIZE } from "../constants";
 import type { EngineConstraints } from "../engine/constraints";
 import type { PathSegment } from "../engine/path";
@@ -116,8 +116,8 @@ export function drawFrogOnPath(
 ) {
 	const visualPos = getEntityVisualPosition(
 		frog.position.index,
-		frog.position.ticksAtPosition,
-		constraints.ticksPerSegment,
+		frog.position.timeAtPosition,
+		constraints.msPerSegment,
 		pathSegments,
 		gridLayout,
 	);

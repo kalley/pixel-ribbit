@@ -1,4 +1,6 @@
-export async function getImageData(image: File): Promise<ImageData> {
+export async function getImageData(
+	image: File,
+): Promise<{ imageData: ImageData; width: number; height: number }> {
 	const url = URL.createObjectURL(image);
 	const img = new Image();
 
@@ -20,7 +22,11 @@ export async function getImageData(image: File): Promise<ImageData> {
 
 			ctx.drawImage(img, 0, 0);
 
-			resolve(ctx.getImageData(0, 0, img.width, img.height));
+			resolve({
+				imageData: ctx.getImageData(0, 0, img.width, img.height),
+				width: img.width,
+				height: img.height,
+			});
 		};
 
 		img.onerror = (error) => {

@@ -15,9 +15,8 @@ export interface EngineConstraints {
 	waitingAreaCapacity: number; // Max entities in waiting area (log)
 
 	// Timing
-	msPerTick: number; // Real-world ms between game ticks
-	ticksPerSegment: number; // Ticks an entity spends at each path position
-	deploymentCooldownTicks: number; // Ticks between deployments
+	msPerSegment: number; // Ticks an entity spends at each path position
+	deploymentCooldownMs: number; // Ticks between deployments
 
 	// Visibility
 	poolVisibleCount: number; // How many upcoming entities visible
@@ -29,9 +28,8 @@ export interface EngineConstraints {
 const DEFAULT_CONSTRAINTS = {
 	pathCapacity: 8,
 	waitingAreaCapacity: 5,
-	msPerTick: 100,
-	ticksPerSegment: 8,
-	deploymentCooldownTicks: 4,
+	msPerSegment: 800,
+	deploymentCooldownMs: 400,
 	poolVisibleCount: 3,
 	victoryModeSpeedup: 3,
 } satisfies EngineConstraints;
@@ -40,11 +38,11 @@ export function levelRulesToConstraints(rules: LevelRules): EngineConstraints {
 	return {
 		pathCapacity: rules.conveyor.capacity,
 		waitingAreaCapacity: rules.conveyorSlots.slotCount,
-		msPerTick: rules.timing?.msPerTick ?? DEFAULT_CONSTRAINTS.msPerTick,
-		ticksPerSegment: rules.conveyor.ticksPerPixel,
-		deploymentCooldownTicks:
-			rules.timing?.deploymentCooldownTicks ??
-			DEFAULT_CONSTRAINTS.deploymentCooldownTicks,
+		msPerSegment: rules.conveyor.msPerSegment,
+		// CHANGE: deploymentCooldownTicks → deploymentCooldownMs
+		deploymentCooldownMs:
+			rules.timing?.deploymentCooldownMs ??
+			DEFAULT_CONSTRAINTS.deploymentCooldownMs,
 		poolVisibleCount:
 			rules.feeder?.maxVisibleRows ?? DEFAULT_CONSTRAINTS.poolVisibleCount,
 		victoryModeSpeedup:
@@ -77,11 +75,9 @@ export function createValidator(constraints: EngineConstraints) {
 				return { valid: false, reason: "Path at capacity" };
 			}
 
-			const ticksSinceLastDeploy =
-				state.tick - (state._debug.lastDeployTick ?? -Infinity);
 			if (
-				ticksSinceLastDeploy <
-				constraints.deploymentCooldownTicks * constraints.msPerTick
+				state.elapsedTime - (state._debug.lastDeployTime ?? -Infinity) <
+				constraints.deploymentCooldownMs
 			) {
 				return { valid: false, reason: "Deployment on cooldown" };
 			}
@@ -166,13 +162,6 @@ export function createValidator(constraints: EngineConstraints) {
 		isGameWon(state: GameState): boolean {
 			const { total } = countRemainingEntities(state);
 			return total === 0;
-		},
-
-		getEffectiveMsPerTick(state: GameState): number {
-			if (state.status === "victory_mode") {
-				return constraints.msPerTick / constraints.victoryModeSpeedup;
-			}
-			return constraints.msPerTick;
 		},
 	};
 }

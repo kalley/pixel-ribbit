@@ -91,7 +91,7 @@ export function applyEntityDeployed(
 	// Update entity state
 	entity.position = {
 		index: getInitialPathPosition(),
-		ticksAtPosition: state.constraints.ticksPerSegment,
+		timeAtPosition: state.constraints.msPerSegment,
 	};
 	entity.state = "moving";
 
@@ -126,5 +126,5 @@ export function applyEntityDeployed(
 	}
 
 	// Update debug info
-	state._debug.lastDeployTick = state.tick;
+	state._debug.lastDeployTime = state.elapsedTime;
 }

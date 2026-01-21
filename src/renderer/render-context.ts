@@ -4,7 +4,7 @@ import type { GridLayout } from "./calculate-grid-layout";
 
 export interface TongueAnimation {
 	entityId: string;
-	startTick: number;
+	startTime: number;
 	targetRow: number;
 	targetCol: number;
 	phases: {
@@ -59,7 +59,7 @@ export function resetRenderContext(
 
 export function createTongueAnimation(
 	entityId: string,
-	currentTick: number,
+	currentTime: number,
 	targetRow: number,
 	targetCol: number,
 	ticksPerSegment: number,
@@ -70,7 +70,7 @@ export function createTongueAnimation(
 
 	return {
 		entityId,
-		startTick: currentTick,
+		startTime: currentTime,
 		targetRow,
 		targetCol,
 		phases: {
@@ -83,9 +83,9 @@ export function createTongueAnimation(
 
 export function getTongueProgress(
 	tongue: TongueAnimation,
-	currentTick: number,
+	currentTime: number,
 ): { phase: "extend" | "hold" | "retract" | "done"; progress: number } {
-	const elapsed = currentTick - tongue.startTick;
+	const elapsed = currentTime - tongue.startTime;
 
 	// Extension phase
 	if (elapsed < tongue.phases.extend) {

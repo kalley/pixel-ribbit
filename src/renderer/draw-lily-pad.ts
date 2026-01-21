@@ -1,4 +1,4 @@
-import leafUrl from "../assets/lily_leaf.png";
+import leafUrl from "../assets/lily_leaf.webp";
 import {
 	CORE_CONTENT_SIZE,
 	CORE_X,
@@ -26,8 +26,8 @@ function drawLilyPad(
 ) {
 	const visualPos = getEntityVisualPosition(
 		frog.position.index,
-		frog.position.ticksAtPosition,
-		constraints.ticksPerSegment,
+		frog.position.timeAtPosition,
+		constraints.msPerSegment,
 		pathSegments,
 		gridLayout,
 	);
@@ -58,12 +58,21 @@ export function drawLilyPadsOnPath(
 export function drawLilyPadsAtRest(
 	ctx: CanvasRenderingContext2D,
 	layout: LayoutFrame["core"],
+	state: GameState | null,
 	amount = 5,
 	occupied = 0,
 ) {
 	const leafImg = leaf.get();
 
 	if (!leafImg) return;
+
+	const ticksSinceLastDeploy = state
+		? state.elapsedTime - (state._debug?.lastDeployTime ?? -Infinity)
+		: Infinity;
+	const onCoolDown = state
+		? ticksSinceLastDeploy < state.constraints.deploymentCooldownMs
+		: false;
+	ctx.globalAlpha = onCoolDown ? 0.75 : 1;
 
 	// Calculate center position once
 	const centerX = CORE_X + STREAM_WIDTH / 2;
@@ -86,4 +95,5 @@ export function drawLilyPadsAtRest(
 		ctx.drawImage(leafImg, -dW / 2, -dH / 2, dW, dH);
 		ctx.restore();
 	}
+	ctx.globalAlpha = 1;
 }

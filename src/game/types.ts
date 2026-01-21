@@ -19,7 +19,7 @@ export function createFrog(id: string, color: string, hunger: number): Frog {
 		resourceType: color,
 		capacity: hunger,
 		consumed: 0,
-		position: { index: 0, ticksAtPosition: 0 },
+		position: { index: 0, timeAtPosition: 0 },
 		state: "waiting",
 	};
 }
