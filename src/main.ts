@@ -2,6 +2,7 @@ import { updateGameState } from "./engine/tick";
 import { decodeSharedGameSnapshot } from "./game/share";
 import { render } from "./renderer/render";
 import "./style.css";
+import { registerSW } from "virtual:pwa-register";
 import type { GameEvent } from "./engine/events/movement";
 import {
 	cleanupTongues,
@@ -27,6 +28,8 @@ const gameContext: GameContext = {
 const appContext = makeApp(gameContext);
 
 app.appendChild(appContext.app);
+
+setupPwaUpdates();
 
 const shareCode = new URL(window.location.href).searchParams.get("share");
 if (shareCode) {
@@ -104,3 +107,60 @@ function handleGameEvent(event: GameEvent, currentTime: number): void {
 
 // Start the game loop
 requestAnimationFrame(gameLoop);
+
+function setupPwaUpdates() {
+	let updateSW: ((reloadPage?: boolean) => Promise<void>) | null = null;
+
+	const showUpdatePrompt = () => {
+		const existing =
+			document.querySelector<HTMLDivElement>(".pwa-update-toast");
+		if (existing) return;
+
+		const toast = document.createElement("div");
+		toast.className = "pwa-update-toast";
+		toast.textContent = "Update available";
+
+		const refreshButton = document.createElement("button");
+		refreshButton.className = "pwa-update-button";
+		refreshButton.type = "button";
+		refreshButton.textContent = "Refresh";
+		refreshButton.onclick = async () => {
+			try {
+				await updateSW?.(true);
+			} catch (error) {
+				console.error("Failed to apply PWA update", error);
+			}
+		};
+
+		toast.appendChild(refreshButton);
+		document.body.appendChild(toast);
+	};
+
+	updateSW = registerSW({
+		immediate: true,
+		onNeedRefresh() {
+			showUpdatePrompt();
+		},
+		onRegisterError(error: unknown) {
+			console.error("PWA registration error", error);
+		},
+		onRegisteredSW(
+			_swUrl: string,
+			registration: ServiceWorkerRegistration | undefined,
+		) {
+			if (!registration) return;
+
+			const requestUpdate = () => {
+				void registration.update();
+			};
+
+			document.addEventListener("visibilitychange", () => {
+				if (document.visibilityState === "visible") {
+					requestUpdate();
+				}
+			});
+
+			window.addEventListener("pageshow", requestUpdate);
+		},
+	});
+}
