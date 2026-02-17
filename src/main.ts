@@ -1,4 +1,5 @@
 import { updateGameState } from "./engine/tick";
+import { decodeSharedGameSnapshot } from "./game/share";
 import { render } from "./renderer/render";
 import "./style.css";
 import type { GameEvent } from "./engine/events/movement";
@@ -20,11 +21,21 @@ const gameContext: GameContext = {
 	state: null,
 	renderContext: null,
 	isPaused: false,
+	activeShareCode: null,
 };
 
 const appContext = makeApp(gameContext);
 
 app.appendChild(appContext.app);
+
+const shareCode = new URL(window.location.href).searchParams.get("share");
+if (shareCode) {
+	const snapshot = decodeSharedGameSnapshot(shareCode);
+
+	if (snapshot) {
+		appContext.startFromShareSnapshot(snapshot, shareCode);
+	}
+}
 
 let lastTime = performance.now();
 const MAX_DELTA = 250; // Prevent spiral of death

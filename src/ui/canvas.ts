@@ -25,6 +25,7 @@ export type GameContext = {
 	state: GameState | null;
 	renderContext: RenderContext | null;
 	isPaused: boolean;
+	activeShareCode: string | null;
 };
 
 export type CanvasContext = {

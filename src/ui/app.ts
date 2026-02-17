@@ -2,6 +2,12 @@ import { GRID_GAP_RATIO, GRID_SIZE, GRID_X, GRID_Y } from "../constants";
 import { createPalette } from "../game/color";
 import { compileGrid } from "../game/compileGrid";
 import { createLevel, type Level } from "../game/level";
+import {
+	createSharedGameSnapshot,
+	encodeSharedGameSnapshot,
+	rehydrateLevelFromSnapshot,
+	type SharedGameSnapshot,
+} from "../game/share";
 import { createFrogGame } from "../game/state";
 import { imageDataToGrid } from "../image-processing/imagedata-to-grid";
 import { calculateGridLayout } from "../renderer/calculate-grid-layout";
@@ -40,19 +46,38 @@ export function makeApp(gameContext: GameContext) {
 	const winDialog = makeWinDialog();
 	const lossDialog = makeLossDialog();
 
+	const updateShareUrl = (shareCode: string) => {
+		const url = new URL(window.location.href);
+		url.searchParams.set("share", shareCode);
+		window.history.replaceState({}, "", url.toString());
+	};
+
+	const startGame = (level: Level, seed: number, shareCode?: string) => {
+		uploadOverlay.style.display = "none";
+		gameContext.isPaused = false;
+		initGame(gameContext, level, seed);
+		canvasCtx.updateLayout();
+
+		if (shareCode) {
+			gameContext.activeShareCode = shareCode;
+			updateShareUrl(shareCode);
+		}
+	};
+
 	const imageUploadModal = makeImageUploadModal({
 		onConfirm: ({ usedPalette, imageData }, pixelsPerSide) => {
-			uploadOverlay.style.display = "none";
 			const grid = imageDataToGrid(imageData);
 			const gameLevel = createLevel(
 				compileGrid(grid),
 				pixelsPerSide,
 				createPalette(usedPalette),
 			);
-			console.log(gameLevel);
-			gameContext.isPaused = false;
-			initGame(gameContext, gameLevel, Date.now());
-			canvasCtx.updateLayout();
+			const seed = Date.now();
+			const shareCode = encodeSharedGameSnapshot(
+				createSharedGameSnapshot(gameLevel, seed),
+			);
+
+			startGame(gameLevel, seed, shareCode);
 		},
 	});
 
@@ -83,6 +108,13 @@ export function makeApp(gameContext: GameContext) {
 			lossDialog.showModal();
 			gameContext.isPaused = true;
 			uploadOverlay.style.display = "";
+		},
+		startFromShareSnapshot: (
+			snapshot: SharedGameSnapshot,
+			shareCode?: string,
+		) => {
+			const level = rehydrateLevelFromSnapshot(snapshot);
+			startGame(level, snapshot.seed, shareCode);
 		},
 	};
 }
