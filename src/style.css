@@ -51,3 +51,25 @@ canvas {
 	cursor: pointer;
 	margin-top: 200px;
 }
+
+.share-controls {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	left: auto;
+	position: absolute;
+	right: 12px;
+	top: calc(env(safe-area-inset-top) + 8px);
+}
+
+.share-button {
+	padding: 10px 14px;
+}
+
+.share-status {
+	background: rgba(0, 0, 0, 0.75);
+	border-radius: 4px;
+	color: #fff;
+	font-size: 10px;
+	padding: 4px 8px;
+}

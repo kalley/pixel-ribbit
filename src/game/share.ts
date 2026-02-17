@@ -84,6 +84,22 @@ export function decodeSharedGameSnapshot(
 	}
 }
 
+export function extractShareCodeFromInput(input: string): string | null {
+	const trimmed = input.trim();
+	if (!trimmed) {
+		return null;
+	}
+
+	try {
+		const url = new URL(trimmed);
+		const code = url.searchParams.get("share");
+
+		return code?.trim() ? code : null;
+	} catch {
+		return trimmed;
+	}
+}
+
 function encodePixels(level: Level): string {
 	const paletteIds = Object.keys(level.palette);
 	const paletteIndexById = new Map<string, number>();

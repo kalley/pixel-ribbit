@@ -5,6 +5,7 @@ import {
 	createSharedGameSnapshot,
 	decodeSharedGameSnapshot,
 	encodeSharedGameSnapshot,
+	extractShareCodeFromInput,
 	rehydrateLevelFromSnapshot,
 } from "./share";
 import { createFrogGame } from "./state";
@@ -86,5 +87,15 @@ describe("game sharing", () => {
 		expect(rehydratedState.grid.resources).toEqual(
 			originalState.grid.resources,
 		);
+	});
+
+	it("extracts share code from url or raw code", () => {
+		const code = "abc123";
+
+		expect(
+			extractShareCodeFromInput(`https://example.com/?foo=bar&share=${code}`),
+		).toBe(code);
+		expect(extractShareCodeFromInput(code)).toBe(code);
+		expect(extractShareCodeFromInput("   ")).toBeNull();
 	});
 });

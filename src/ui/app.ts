@@ -4,7 +4,9 @@ import { compileGrid } from "../game/compileGrid";
 import { createLevel, type Level } from "../game/level";
 import {
 	createSharedGameSnapshot,
+	decodeSharedGameSnapshot,
 	encodeSharedGameSnapshot,
+	extractShareCodeFromInput,
 	rehydrateLevelFromSnapshot,
 	type SharedGameSnapshot,
 } from "../game/share";
@@ -45,11 +47,28 @@ export function makeApp(gameContext: GameContext) {
 	const canvasCtx = makeCanvas(gameContext, () => console.log("size changed"));
 	const winDialog = makeWinDialog();
 	const lossDialog = makeLossDialog();
+	const shareStatus = h(
+		"span",
+		{ class: "share-status", style: "display: none" },
+		"",
+	);
+
+	let shareStatusTimer: number | undefined;
 
 	const updateShareUrl = (shareCode: string) => {
 		const url = new URL(window.location.href);
 		url.searchParams.set("share", shareCode);
 		window.history.replaceState({}, "", url.toString());
+	};
+
+	const showShareStatus = (message: string, durationMs = 1600) => {
+		shareStatus.textContent = message;
+		shareStatus.style.display = "inline";
+
+		clearTimeout(shareStatusTimer);
+		shareStatusTimer = window.setTimeout(() => {
+			shareStatus.style.display = "none";
+		}, durationMs);
 	};
 
 	const startGame = (level: Level, seed: number, shareCode?: string) => {
@@ -61,6 +80,7 @@ export function makeApp(gameContext: GameContext) {
 		if (shareCode) {
 			gameContext.activeShareCode = shareCode;
 			updateShareUrl(shareCode);
+			shareControls.style.display = "flex";
 		}
 	};
 
@@ -79,7 +99,54 @@ export function makeApp(gameContext: GameContext) {
 
 			startGame(gameLevel, seed, shareCode);
 		},
+		onLoadSharedGame: (shareInput) => {
+			const shareCode = extractShareCodeFromInput(shareInput);
+			if (!shareCode) {
+				return false;
+			}
+
+			const snapshot = decodeSharedGameSnapshot(shareCode);
+			if (!snapshot) {
+				return false;
+			}
+
+			const level = rehydrateLevelFromSnapshot(snapshot);
+			startGame(level, snapshot.seed, shareCode);
+
+			return true;
+		},
 	});
+
+	const shareButton = makeButton(
+		{
+			class: "share-button compact",
+			onClick: async () => {
+				if (!gameContext.activeShareCode) {
+					showShareStatus("No share link available");
+					return;
+				}
+
+				const url = new URL(window.location.href);
+				url.searchParams.set("share", gameContext.activeShareCode);
+				const shareUrl = url.toString();
+
+				try {
+					await navigator.clipboard.writeText(shareUrl);
+					showShareStatus("Link copied");
+				} catch {
+					showShareStatus("Copy failed");
+				}
+			},
+		},
+		"Share",
+	);
+
+	const shareControls = h(
+		"div",
+		{ class: "share-controls", style: "display: none" },
+		shareButton,
+		shareStatus,
+	);
 
 	const uploadOverlay = h(
 		"div",
@@ -94,6 +161,7 @@ export function makeApp(gameContext: GameContext) {
 		app: createFragment(
 			canvasCtx.canvas,
 			uploadOverlay,
+			shareControls,
 			winDialog.element,
 			lossDialog.element,
 			imageUploadModal.element,

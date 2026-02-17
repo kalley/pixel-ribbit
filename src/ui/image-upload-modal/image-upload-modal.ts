@@ -30,8 +30,10 @@ function imageDataToDataUrl(imageData: ImageData): string {
 
 export function makeImageUploadModal({
 	onConfirm,
+	onLoadSharedGame,
 }: {
 	onConfirm: (result: PosterizeResult, pixelsPerSide: number) => void;
+	onLoadSharedGame: (shareInput: string) => boolean;
 }) {
 	// State management
 	let originalImageData: ImageData | null = null;
@@ -39,6 +41,7 @@ export function makeImageUploadModal({
 	let currentDifficulty: DifficultyPreset = "medium";
 	let currentColorCount: number = DIFFICULTY_PRESETS.medium.defaultColors;
 	let debounceTimer: number | undefined;
+	let sharedUrlValue = "";
 
 	const processingIndicator = h(
 		"div",
@@ -55,6 +58,24 @@ export function makeImageUploadModal({
 		{},
 		`Colors: ${currentColorCount} (${DIFFICULTY_PRESETS[currentDifficulty].minColors}-${DIFFICULTY_PRESETS[currentDifficulty].maxColors})`,
 	);
+	const sharedLoadError = h(
+		"p",
+		{
+			class: "shared-load-error",
+			style: "display: none",
+		},
+		"Could not load shared game. Paste a full link or share code.",
+	);
+	const sharedUrlInput = h("input", {
+		type: "text",
+		class: "shared-url-input",
+		placeholder: "Paste shared game URL or code",
+		value: sharedUrlValue,
+		onInput: (event) => {
+			sharedUrlValue = (event.target as HTMLInputElement).value;
+			sharedLoadError.style.display = "none";
+		},
+	});
 
 	// ... etc
 	async function handleFileSelect(file: File) {
@@ -69,6 +90,7 @@ export function makeImageUploadModal({
 			);
 			originalPreviewImg.src = imageDataToDataUrl(resized);
 
+			sharedLoadSection.style.display = "none";
 			configView.style.display = "flex";
 
 			updatePosterization();
@@ -144,6 +166,7 @@ export function makeImageUploadModal({
 		currentColorCount = DIFFICULTY_PRESETS.medium.defaultColors;
 
 		configView.style.display = "none";
+		sharedLoadSection.style.display = "";
 		dropZone.reset();
 
 		// Reset difficulty radio buttons
@@ -152,6 +175,9 @@ export function makeImageUploadModal({
 		colorSlider.max = String(preset.maxColors);
 		colorSlider.value = String(preset.defaultColors);
 		colorCountLabel.textContent = `Colors: ${preset.defaultColors} (${preset.minColors}-${preset.maxColors})`;
+		sharedUrlValue = "";
+		sharedUrlInput.value = "";
+		sharedLoadError.style.display = "none";
 	}
 
 	function handleConfirm() {
@@ -161,6 +187,18 @@ export function makeImageUploadModal({
 			modal.close();
 			resetModal();
 		}
+	}
+
+	function handleLoadSharedGame() {
+		const loaded = onLoadSharedGame(sharedUrlValue);
+
+		if (!loaded) {
+			sharedLoadError.style.display = "block";
+			return;
+		}
+
+		modal.close();
+		resetModal();
 	}
 
 	const configView = h(
@@ -207,9 +245,31 @@ export function makeImageUploadModal({
 		),
 	);
 
+	const sharedLoadSection = h(
+		"div",
+		{ class: "shared-load-section" },
+		h("p", { class: "shared-load-heading" }, "Or load a shared game"),
+		h(
+			"div",
+			{ class: "shared-load-controls" },
+			sharedUrlInput,
+			makeButton(
+				{ onClick: handleLoadSharedGame, class: "shared-load-button" },
+				"Load",
+			),
+		),
+		sharedLoadError,
+	);
+
 	// Compose them
 	const modal = makeModal(
-		h("div", { class: "image-upload-modal" }, dropZone.element, configView),
+		h(
+			"div",
+			{ class: "image-upload-modal" },
+			dropZone.element,
+			sharedLoadSection,
+			configView,
+		),
 	);
 
 	return { element: modal, showModal: () => modal.showModal() };

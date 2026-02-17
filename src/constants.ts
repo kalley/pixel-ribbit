@@ -11,7 +11,7 @@ export const FROG_SIZE = 56;
 // ============================================
 // TOP RAIL
 // ============================================
-export const TOP_RAIL_HEIGHT = 60; // Logo + score + lives
+export const TOP_RAIL_HEIGHT = 76; // Reserve space for controls + future branding
 
 // ============================================
 // CORE (Stream + Embedded Grid)

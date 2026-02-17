@@ -15,3 +15,13 @@
 	border-bottom: none;
 	transform: translateY(4px); /* Pushes down when clicked */
 }
+
+.pixel-btn.compact {
+	border-bottom-width: 3px;
+	font-size: 10px;
+	padding: 10px 14px;
+}
+
+.pixel-btn.compact:active {
+	transform: translateY(3px);
+}

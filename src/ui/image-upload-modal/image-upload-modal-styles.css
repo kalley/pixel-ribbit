@@ -24,6 +24,42 @@
 	gap: 20px;
 }
 
+.shared-load-section {
+	border-top: 1px solid #ddd;
+	margin-top: 20px;
+	padding-top: 20px;
+}
+
+.shared-load-heading {
+	margin: 0 0 8px;
+	font-size: 12px;
+	text-transform: uppercase;
+	color: #999;
+}
+
+.shared-load-controls {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 8px;
+}
+
+.shared-url-input {
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 12px;
+	padding: 10px;
+}
+
+.shared-load-button {
+	padding: 10px 16px;
+}
+
+.shared-load-error {
+	color: #c62828;
+	font-size: 11px;
+	margin: 8px 0 0;
+}
+
 .control-group {
 	display: flex;
 	flex-direction: column;
