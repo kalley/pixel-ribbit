@@ -1,6 +1,10 @@
 // renderer/path-interpolation.ts
 
 import { GRID_PADDING, GRID_SIZE, STREAM_WIDTH } from "../constants";
+import {
+	getSegmentProgress,
+	isCornerPathTransition,
+} from "../engine/movement-timing";
 import type { PathSegment } from "../engine/path";
 import { clamp } from "../utils/clamp";
 import type { GridLayout } from "./calculate-grid-layout";
@@ -91,13 +95,6 @@ function lerpAngle(a: number, b: number, t: number): number {
 }
 
 /**
- * Check if transitioning between two segments is a corner
- */
-function isCornerTransition(current: PathSegment, next: PathSegment): boolean {
-	return current.edge !== next.edge;
-}
-
-/**
  * Interpolate position along path with smooth corners
  */
 function interpolatePathPosition(
@@ -122,7 +119,7 @@ function interpolatePathPosition(
 	const nextAngle = getFacingAngle(nextSegment.facing);
 
 	// Check if this is a corner transition
-	if (isCornerTransition(currentSegment, nextSegment)) {
+	if (isCornerPathTransition(currentSegment, nextSegment)) {
 		const corner = getCornerPivot(currentSegment, nextSegment, gridLayout);
 
 		if (progress < 0.5) {
@@ -165,12 +162,16 @@ export function getEntityVisualPosition(
 	}
 
 	const nextSegment = pathSegments.at(pathIndex + 1) ?? null;
-	const isCorner = nextSegment
-		? isCornerTransition(currentSegment, nextSegment)
-		: false;
-	const msPerUnit = isCorner ? msPerSegment * 3 : msPerSegment;
-	const segmentLength = isCorner ? Math.PI / 2 : 1;
-	const progress = clamp(timeAtPosition / msPerUnit / segmentLength, 0, 1);
+	const progress = clamp(
+		getSegmentProgress(
+			timeAtPosition,
+			msPerSegment,
+			currentSegment,
+			nextSegment,
+		),
+		0,
+		1,
+	);
 
 	if (progress < 0 || progress > 1) {
 		console.warn("Progress out of bounds", progress);

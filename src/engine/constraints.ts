@@ -84,7 +84,7 @@ export function createValidator(constraints: EngineConstraints) {
 
 			const hasAvailableEntity =
 				state.pool.columns.some((col) => col.entities.length > 0) ||
-				state.waitingArea.entities.length > 0;
+				state.waitingArea.entities.some((entityId) => entityId !== null);
 			if (!hasAvailableEntity) {
 				return { valid: false, reason: "No entities available" };
 			}

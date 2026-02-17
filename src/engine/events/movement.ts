@@ -1,11 +1,8 @@
 // engine/events/movement.ts
 
 import type { ConsumeCheckResult } from "../constraints";
-import {
-	getNextPathPosition,
-	getPathSegment,
-	isCornerTransition,
-} from "../path";
+import { getMsNeededForSegment } from "../movement-timing";
+import { getNextPathPosition, getPathSegment } from "../path";
 import {
 	type Entity,
 	entitySatisfied,
@@ -66,14 +63,12 @@ export function updatePathEntities(
 		const nextSegment = state.path.segments[entity.position.index + 1];
 		entity.position.timeAtPosition += deltaMs;
 
-		// Determine how many ticks needed for this segment
-		// Corners take 2x as long to give smoother visual interpolation
-		const msNeeded =
-			currentSegment &&
-			nextSegment &&
-			isCornerTransition(currentSegment, nextSegment)
-				? state.constraints.msPerSegment * 3
-				: state.constraints.msPerSegment;
+		// Corners take longer for smoother visual interpolation.
+		const msNeeded = getMsNeededForSegment(
+			state.constraints.msPerSegment,
+			currentSegment,
+			nextSegment,
+		);
 
 		// Check if entity should move to next position
 		if (entity.position.timeAtPosition >= msNeeded) {

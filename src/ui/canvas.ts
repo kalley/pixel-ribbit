@@ -9,6 +9,18 @@ import {
 	type LayoutFrame,
 } from "../viewport";
 
+export type LayoutRules = {
+	slotCount: number;
+	columnCount: number;
+	maxVisiblePerColumn: number;
+};
+
+const DEFAULT_LAYOUT_RULES: LayoutRules = {
+	slotCount: 5,
+	columnCount: 3,
+	maxVisiblePerColumn: 3,
+};
+
 export type GameContext = {
 	state: GameState | null;
 	renderContext: RenderContext | null;
@@ -19,24 +31,41 @@ export type CanvasContext = {
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
 	layout: LayoutFrame; // Cached
-	levelRules: {
-		slotCount: number;
-		columnCount: number;
-		maxVisiblePerColumn: number;
-	};
-	updateLayout: () => void;
+	levelRules: LayoutRules;
+	updateLayout: () => LayoutFrame;
 	cleanup: () => void;
 };
+
+export function getLayoutRulesFromState(state: GameState | null): LayoutRules {
+	if (!state) {
+		return DEFAULT_LAYOUT_RULES;
+	}
+
+	return {
+		slotCount: state.waitingArea.capacity,
+		columnCount: state.pool.columns.length,
+		maxVisiblePerColumn:
+			state.pool.columns[0]?.maxVisible ??
+			DEFAULT_LAYOUT_RULES.maxVisiblePerColumn,
+	};
+}
+
+export function getTouchClientPoint(
+	event: Pick<TouchEvent, "changedTouches">,
+): { x: number; y: number } | null {
+	const touch = event.changedTouches.item(0) ?? event.changedTouches[0];
+	if (!touch) {
+		return null;
+	}
+
+	return { x: touch.clientX, y: touch.clientY };
+}
 
 export function makeCanvas(
 	gameContext: GameContext,
 	onResize?: (layout: LayoutFrame) => void,
 ): CanvasContext {
-	const levelRules = {
-		slotCount: 5,
-		columnCount: 3,
-		maxVisiblePerColumn: 3,
-	};
+	let currentLayoutRules = getLayoutRulesFromState(gameContext.state);
 
 	let cachedLayout: LayoutFrame;
 
@@ -76,10 +105,11 @@ export function makeCanvas(
 			handleCanvasClick(x, y);
 		},
 		ontouchend: (e) => {
-			if (!e.touches.length) return;
+			const clientPoint = getTouchClientPoint(e);
+			if (!clientPoint) return;
 			const rect = canvas.getBoundingClientRect();
-			const x = e.touches[0].clientX - rect.left;
-			const y = e.touches[0].clientY - rect.top;
+			const x = clientPoint.x - rect.left;
+			const y = clientPoint.y - rect.top;
 			handleCanvasClick(x, y);
 		},
 		eventOptions: { touchend: { passive: true } },
@@ -93,7 +123,8 @@ export function makeCanvas(
 
 	const updateLayout = () => {
 		const viewport = createViewportState(canvas);
-		cachedLayout = computeLayout(viewport, levelRules);
+		currentLayoutRules = getLayoutRulesFromState(gameContext.state);
+		cachedLayout = computeLayout(viewport, currentLayoutRules);
 
 		// Apply transforms
 		ctx.resetTransform();
@@ -113,7 +144,7 @@ export function makeCanvas(
 	});
 
 	// Initialize layout before observing
-	cachedLayout = computeLayout(createViewportState(canvas), levelRules);
+	cachedLayout = computeLayout(createViewportState(canvas), currentLayoutRules);
 	resizeObserver.observe(canvas);
 
 	return {
@@ -122,7 +153,9 @@ export function makeCanvas(
 		get layout() {
 			return cachedLayout;
 		},
-		levelRules,
+		get levelRules() {
+			return currentLayoutRules;
+		},
 		updateLayout,
 		cleanup: () => resizeObserver.disconnect(),
 	};

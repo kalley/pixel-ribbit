@@ -13,7 +13,7 @@
 }
 
 .drop-zone:hover,
-.drop-zone.dragging {
+.drop-zone.is-dragging {
 	border-color: #666;
 	background-color: #f5f5f5;
 }

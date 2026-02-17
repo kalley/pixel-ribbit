@@ -34,7 +34,7 @@ export function makeImageDropZone(onFileSelect: (file: File) => void) {
 			},
 			onDrop: (e) => {
 				e.preventDefault();
-				dropZone.classList.remove("dragging");
+				dropZone.classList.remove("is-dragging");
 
 				const file = e.dataTransfer?.files[0];
 

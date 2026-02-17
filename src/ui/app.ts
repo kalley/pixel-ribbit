@@ -52,6 +52,7 @@ export function makeApp(gameContext: GameContext) {
 			console.log(gameLevel);
 			gameContext.isPaused = false;
 			initGame(gameContext, gameLevel, Date.now());
+			canvasCtx.updateLayout();
 		},
 	});
 
